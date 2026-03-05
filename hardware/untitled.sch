@@ -15797,6 +15797,8 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="R12" library="rcl" deviceset="R-EU_" device="R0603"/>
 <part name="C17" library="rcl" deviceset="C-EU" device="C0603" value="100n"/>
 <part name="GND24" library="supply1" deviceset="GND" device=""/>
+<part name="C18" library="rcl" deviceset="C-EU" device="C0603"/>
+<part name="GND22" library="supply1" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -15876,6 +15878,8 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <instance part="R12" gate="G$1" x="-66.04" y="22.86" rot="R90"/>
 <instance part="C17" gate="G$1" x="-66.04" y="5.08"/>
 <instance part="GND24" gate="1" x="-66.04" y="-5.08"/>
+<instance part="C18" gate="G$1" x="299.72" y="78.74"/>
+<instance part="GND22" gate="1" x="299.72" y="68.58"/>
 </instances>
 <busses>
 </busses>
@@ -16205,6 +16209,11 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="GND24" gate="1" pin="GND"/>
 <wire x1="-66.04" y1="-2.54" x2="-66.04" y2="0" width="0.1524" layer="91"/>
 </segment>
+<segment>
+<pinref part="C18" gate="G$1" pin="2"/>
+<pinref part="GND22" gate="1" pin="GND"/>
+<wire x1="299.72" y1="71.12" x2="299.72" y2="73.66" width="0.1524" layer="91"/>
+</segment>
 </net>
 <net name="N$4" class="0">
 <segment>
@@ -16393,7 +16402,11 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </segment>
 <segment>
 <pinref part="X2" gate="G$1" pin="5"/>
-<wire x1="307.34" y1="83.82" x2="294.64" y2="83.82" width="0.1524" layer="91"/>
+<wire x1="307.34" y1="83.82" x2="299.72" y2="83.82" width="0.1524" layer="91"/>
+<pinref part="C18" gate="G$1" pin="1"/>
+<wire x1="299.72" y1="83.82" x2="294.64" y2="83.82" width="0.1524" layer="91"/>
+<wire x1="299.72" y1="81.28" x2="299.72" y2="83.82" width="0.1524" layer="91"/>
+<junction x="299.72" y="83.82"/>
 </segment>
 </net>
 <net name="NRST" class="0">
