@@ -15794,6 +15794,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="GND20" library="supply1" deviceset="GND" device=""/>
 <part name="C16" library="rcl" deviceset="CPOL-EU" device="SMCB"/>
 <part name="GND21" library="supply1" deviceset="GND" device=""/>
+<part name="R12" library="rcl" deviceset="R-EU_" device="R0603"/>
+<part name="C17" library="rcl" deviceset="C-EU" device="C0603" value="100n"/>
+<part name="GND24" library="supply1" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -15870,6 +15873,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <instance part="GND20" gate="1" x="149.86" y="129.54"/>
 <instance part="C16" gate="G$1" x="157.48" y="139.7"/>
 <instance part="GND21" gate="1" x="157.48" y="129.54"/>
+<instance part="R12" gate="G$1" x="-66.04" y="22.86" rot="R90"/>
+<instance part="C17" gate="G$1" x="-66.04" y="5.08"/>
+<instance part="GND24" gate="1" x="-66.04" y="-5.08"/>
 </instances>
 <busses>
 </busses>
@@ -16194,6 +16200,11 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="GND21" gate="1" pin="GND"/>
 <wire x1="157.48" y1="132.08" x2="157.48" y2="134.62" width="0.1524" layer="91"/>
 </segment>
+<segment>
+<pinref part="C17" gate="G$1" pin="2"/>
+<pinref part="GND24" gate="1" pin="GND"/>
+<wire x1="-66.04" y1="-2.54" x2="-66.04" y2="0" width="0.1524" layer="91"/>
+</segment>
 </net>
 <net name="N$4" class="0">
 <segment>
@@ -16360,6 +16371,11 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="345.44" y1="104.14" x2="345.44" y2="106.68" width="0.1524" layer="91"/>
 <junction x="345.44" y="104.14"/>
 </segment>
+<segment>
+<pinref part="R12" gate="G$1" pin="2"/>
+<wire x1="-66.04" y1="27.94" x2="-66.04" y2="30.48" width="0.1524" layer="91"/>
+<label x="-66.04" y="30.48" size="1.4224" layer="95" rot="R90" xref="yes"/>
+</segment>
 </net>
 <net name="5V" class="0">
 <segment>
@@ -16390,6 +16406,15 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="U$1" gate="G$1" pin="NRST"/>
 <wire x1="20.32" y1="95.25" x2="20.32" y2="99.06" width="0.1524" layer="91"/>
 <label x="20.32" y="99.06" size="1.4224" layer="95" rot="R90" xref="yes"/>
+</segment>
+<segment>
+<pinref part="R12" gate="G$1" pin="1"/>
+<wire x1="-66.04" y1="12.7" x2="-71.12" y2="12.7" width="0.1524" layer="91"/>
+<wire x1="-66.04" y1="17.78" x2="-66.04" y2="12.7" width="0.1524" layer="91"/>
+<junction x="-66.04" y="12.7"/>
+<pinref part="C17" gate="G$1" pin="1"/>
+<wire x1="-66.04" y1="12.7" x2="-66.04" y2="7.62" width="0.1524" layer="91"/>
+<label x="-71.12" y="12.7" size="1.4224" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 <net name="SWD_CLK" class="0">
