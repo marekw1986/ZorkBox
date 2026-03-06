@@ -15752,9 +15752,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="GND17" library="supply1" deviceset="GND" device=""/>
 <part name="GND4" library="supply1" deviceset="GND" device=""/>
 <part name="GND5" library="supply1" deviceset="GND" device=""/>
-<part name="C1" library="rcl" deviceset="C-EU" device="C0603"/>
 <part name="C3" library="rcl" deviceset="C-EU" device="C0603"/>
-<part name="GND6" library="supply1" deviceset="GND" device=""/>
 <part name="GND7" library="supply1" deviceset="GND" device=""/>
 <part name="U4" library="SparkFun-Connectors" deviceset="USD-SOCKET" device="USD" value="microSD"/>
 <part name="GND55" library="supply1" deviceset="GND" device=""/>
@@ -15835,9 +15833,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <instance part="GND17" gate="1" x="-63.5" y="45.72"/>
 <instance part="GND4" gate="1" x="17.78" y="-10.16"/>
 <instance part="GND5" gate="1" x="5.08" y="86.36"/>
-<instance part="C1" gate="G$1" x="68.58" y="96.52"/>
 <instance part="C3" gate="G$1" x="76.2" y="96.52"/>
-<instance part="GND6" gate="1" x="68.58" y="86.36"/>
 <instance part="GND7" gate="1" x="76.2" y="86.36"/>
 <instance part="U4" gate="G$1" x="68.58" y="-76.2"/>
 <instance part="GND55" gate="1" x="58.42" y="-99.06"/>
@@ -16150,11 +16146,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="GND5" gate="1" pin="GND"/>
 <wire x1="15.24" y1="96.52" x2="5.08" y2="96.52" width="0.1524" layer="91"/>
 <wire x1="5.08" y1="96.52" x2="5.08" y2="88.9" width="0.1524" layer="91"/>
-</segment>
-<segment>
-<pinref part="C1" gate="G$1" pin="2"/>
-<pinref part="GND6" gate="1" pin="GND"/>
-<wire x1="68.58" y1="88.9" x2="68.58" y2="91.44" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="C3" gate="G$1" pin="2"/>
@@ -16595,14 +16586,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <segment>
 <pinref part="U$2" gate="G$1" pin="PH0/OSC_IN"/>
 <wire x1="213.36" y1="-22.86" x2="208.28" y2="-22.86" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="N$7" class="0">
-<segment>
-<wire x1="50.8" y1="95.25" x2="50.8" y2="104.14" width="0.1524" layer="91"/>
-<pinref part="C1" gate="G$1" pin="1"/>
-<wire x1="50.8" y1="104.14" x2="68.58" y2="104.14" width="0.1524" layer="91"/>
-<wire x1="68.58" y1="104.14" x2="68.58" y2="99.06" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$8" class="0">
