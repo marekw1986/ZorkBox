@@ -61,10 +61,10 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define SDIO_CD_Pin GPIO_PIN_9
 #define SDIO_CD_GPIO_Port GPIOC
-#define PS2_DATA_Pin GPIO_PIN_11
-#define PS2_DATA_GPIO_Port GPIOA
-#define PS2_CLK_Pin GPIO_PIN_12
+#define PS2_CLK_Pin GPIO_PIN_11
 #define PS2_CLK_GPIO_Port GPIOA
+#define PS2_DATA_Pin GPIO_PIN_12
+#define PS2_DATA_GPIO_Port GPIOA
 #define HSYNC_Pin GPIO_PIN_15
 #define HSYNC_GPIO_Port GPIOA
 #define RED0_Pin GPIO_PIN_3

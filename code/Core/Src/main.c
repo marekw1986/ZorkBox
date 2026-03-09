@@ -23,7 +23,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
+#include <stdint.h>
+#include <errno.h>
+#include <sys/unistd.h> // STDOUT_FILENO, STDERR_FILENO
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -384,17 +387,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(SDIO_CD_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PS2_DATA_Pin */
-  GPIO_InitStruct.Pin = PS2_DATA_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(PS2_DATA_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pin : PS2_CLK_Pin */
   GPIO_InitStruct.Pin = PS2_CLK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(PS2_CLK_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PS2_DATA_Pin */
+  GPIO_InitStruct.Pin = PS2_DATA_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(PS2_DATA_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : RED0_Pin RED1_Pin GREEN0_Pin GREEN1_Pin
                            BLUE0_Pin BLUE1_Pin */
@@ -412,6 +415,21 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+int _write(int file, char *data, int len)
+{
+   if ((file != STDOUT_FILENO) && (file != STDERR_FILENO))
+   {
+      errno = EBADF;
+      return -1;
+   }
+
+   HAL_StatusTypeDef status = HAL_UART_Transmit(&huart2, (uint8_t*)data, len, 1000);
+
+   // return # of bytes written - as best we can tell
+   return (status == HAL_OK ? len : 0);
+}
+
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -423,13 +441,14 @@ static void MX_GPIO_Init(void)
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
-  /* USER CODE BEGIN 5 */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END 5 */
+	/* USER CODE BEGIN 5 */
+	/* Infinite loop */
+	printf("Start\r\n");
+	for(;;)
+	{
+		osDelay(1);
+	}
+	/* USER CODE END 5 */
 }
 
 /**
