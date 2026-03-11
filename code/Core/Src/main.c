@@ -46,6 +46,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 SD_HandleTypeDef hsd;
+DMA_HandleTypeDef hdma_sdio_rx;
+DMA_HandleTypeDef hdma_sdio_tx;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim4;
@@ -60,6 +62,7 @@ osThreadId defaultTaskHandle;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_SDIO_SD_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM2_Init(void);
@@ -67,7 +70,7 @@ static void MX_TIM4_Init(void);
 void StartDefaultTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
-
+static void sd_write (void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -104,6 +107,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_SDIO_SD_Init();
   MX_FATFS_Init();
   MX_USART2_UART_Init();
@@ -131,7 +135,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 1024);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -221,7 +225,7 @@ static void MX_SDIO_SD_Init(void)
   hsd.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_DISABLE;
   hsd.Init.BusWide = SDIO_BUS_WIDE_1B;
   hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd.Init.ClockDiv = 0;
+  hsd.Init.ClockDiv = 10;
   /* USER CODE BEGIN SDIO_Init 2 */
 
   /* USER CODE END SDIO_Init 2 */
@@ -360,6 +364,25 @@ static void MX_USART2_UART_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA2_Stream3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
+  /* DMA2_Stream6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -414,6 +437,29 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+static void sd_write (void) {
+    FRESULT res;
+    FIL file;
+
+    res = f_open(&file, "0:/test.txt", (FA_OPEN_ALWAYS | FA_WRITE));
+    if (res != FR_OK) {
+        printf("f_open error code: %i\r\n", res);
+        return;
+    }
+    if (f_size(&file) == 0) {
+        f_puts("To jest pierwsza linia\r\n", &file);
+    }
+    else {
+        res = f_lseek(&file, f_size(&file));
+        if (res != FR_OK) {
+            printf("f_lseek error code: %i\r\n", res);
+            f_close(&file);
+            return;
+        }
+    }
+    f_puts("To jest test.\n", &file);
+    f_close(&file);
+}
 
 int _write(int file, char *data, int len)
 {
@@ -441,14 +487,19 @@ int _write(int file, char *data, int len)
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
-	/* USER CODE BEGIN 5 */
+  /* USER CODE BEGIN 5 */
+	FRESULT res = f_mount(&SDFatFS, "0:", 0);
+	if (res != FR_OK) {printf("f_mount error code: %i\r\n", res);}
+	else {printf("f_mount OK\r\n");}
 	/* Infinite loop */
 	printf("Start\r\n");
 	for(;;)
 	{
-		osDelay(1);
+		sd_write();
+		osDelay(1000);
+		printf("Test\r\n");
 	}
-	/* USER CODE END 5 */
+  /* USER CODE END 5 */
 }
 
 /**
