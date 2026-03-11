@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <sys/unistd.h> // STDOUT_FILENO, STDERR_FILENO
+#include "ztypes.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -493,11 +494,19 @@ void StartDefaultTask(void const * argument)
 	else {printf("f_mount OK\r\n");}
 	/* Infinite loop */
 	printf("Start\r\n");
+
+	open_story();
+	configure(V1, V8);
+	initialize_screen();
+	z_restart();
+
 	for(;;)
 	{
 		sd_write();
 		osDelay(1000);
 		printf("Test\r\n");
+
+		interpret();
 	}
   /* USER CODE END 5 */
 }
