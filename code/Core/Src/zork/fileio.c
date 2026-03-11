@@ -41,13 +41,14 @@
   
 //#include <SdFat.h>
 //#include <SdFatUtil.h>
+#include "fatfs.h"
 #include "ztypes.h"
 
 /* Static data */
 
 extern int GLOBALVER;
 
-//SdFile game;        /* Zcode file pointer */
+FIL game;        /* Zcode file pointer */
 
 /*
  * open_story
@@ -99,9 +100,9 @@ void open_story( void )
 //
 //        return;
 //    }
-
-FATAL:
-    fatal();
+//
+//FATAL:
+//    fatal();
 }                               /* open_story */
 
 
@@ -114,12 +115,7 @@ FATAL:
 
 void close_story( void )
 {
-
-//    if ( game.isOpen() )
-//    {
-//        game.close( );
-//    }
-
+	f_close(&game);
 }                               /* close_story */
 
 /*
@@ -133,7 +129,7 @@ void close_story( void )
 unsigned int get_story_size( void )
 {
 
-//    return game.fileSize( );
+    return (unsigned int)f_size(&game);
 
 }                               /* get_story_size */
 
@@ -277,18 +273,18 @@ zword_t read_code_word( void )
 zbyte_t read_code_byte( void )
 {
     zbyte_t value;
+    UINT br;
 
-//    /* Seek to start of page */
-//    game.seekSet( pc );
-//
-//    value = game.read();
-//
-//    /* Update the PC */
-//    pc++;
-//
-//    /* Return byte from page offset */
+    /* Seek to start of page */
+    f_lseek(&game, pc);
+
+    /* Read one byte */
+    f_read(&game, &value, 1, &br);
+
+    /* Update the PC */
+    pc++;
+
     return value;
-
 }                               /* read_code_byte */
 
 /*
@@ -326,30 +322,32 @@ void write_data_word( unsigned long *addr, zword_t value)
 zbyte_t read_data_byte( unsigned long *addr )
 {
     zbyte_t value = 0;
+    UINT br;
 
-//    /* Seek to start of page */
-//    game.seekSet( *addr );
-//
-//    value = game.read();
-//
-//    /* Update the address */
-//
-//    ( *addr )++;
+    /* Seek to requested address */
+    f_lseek(&game, *addr);
 
-    return ( value );
+    /* Read one byte */
+    f_read(&game, &value, 1, &br);
 
+    /* Update the address */
+    (*addr)++;
+
+    return value;
 }                               /* read_data_byte */
 
-void write_data_byte( unsigned long *addr, zbyte_t value)
+void write_data_byte(unsigned long *addr, zbyte_t value)
 {
-//    /* Seek to start of page */
-//    game.seekSet( *addr );
-//
-//    game.write( value );
-//
-//    /* Update the address */
-//    ( *addr )++;
+    UINT bw;
 
+    /* Seek to requested address */
+    f_lseek(&game, *addr);
+
+    /* Write one byte */
+    f_write(&game, &value, 1, &bw);
+
+    /* Update the address */
+    (*addr)++;
 }                               /* write_data_byte */
 
 zbyte_t get_byte(unsigned long offset){ unsigned long addr = offset; return read_data_byte(&addr); }
