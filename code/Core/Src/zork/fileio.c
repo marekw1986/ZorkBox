@@ -57,52 +57,76 @@ FIL game;        /* Zcode file pointer */
  *
  */
 
-void open_story( void )
+void open_story(void)
 {
-//    int16_t count;
-//    uint32_t pos = 0;
-//    char memory_name[] = "MEMORY.DAT";
-//    char game_name[] = "GAME.DAT";
-//
-//    if ( game.open( memory_name, O_RDWR | O_CREAT ) )
-//    {
-//        game.truncate(0);
-//        game.close();
-//    }
-//    else
-//    {
-//        goto FATAL;
-//    }
-//
-//    if ( game.open( game_name, O_RDONLY ) )
-//    {
-//        game.seekSet(0);
-//        while ( ( count = game.read( stack, sizeof(stack)) ) > 0 )
-//        {
-//            game.close();
-//            if(!game.open( memory_name, O_RDWR ))
-//                goto FATAL;
-//
-//            game.seekEnd();
-//            game.write( stack, count);
-//            game.close();
-//
-//            if(!game.open( game_name, O_RDONLY ))
-//                goto FATAL;
-//
-//            pos += count;
-//            game.seekSet(pos);
-//        }
-//
-//        game.close();
-//        if(!game.open( memory_name, O_RDWR ))
-//            goto FATAL;
-//
-//        return;
-//    }
-//
-//FATAL:
-//    fatal();
+    FRESULT res;
+    UINT br, bw;
+    uint32_t pos = 0;
+    const char memory_name[] = "MEMORY.DAT";
+    const char game_name[]   = "GAME.DAT";
+
+    // 1. Open MEMORY.DAT for read/write, create if not exist, truncate
+    res = f_open(&game, memory_name, FA_READ | FA_WRITE | FA_CREATE_ALWAYS);
+    if (res != FR_OK)
+        goto FATAL;
+    f_close(&game);
+
+    // 2. Open GAME.DAT for read
+    res = f_open(&game, game_name, FA_READ);
+    if (res != FR_OK)
+        goto FATAL;
+
+    f_lseek(&game, 0);  // start at beginning
+
+    while (1)
+    {
+        res = f_read(&game, stack, sizeof(stack), &br);
+        if (res != FR_OK)
+            goto FATAL;
+        if (br == 0)  // EOF
+            break;
+
+        // Open MEMORY.DAT for writing/appending
+        f_close(&game);
+        res = f_open(&game, memory_name, FA_WRITE);
+        if (res != FR_OK)
+            goto FATAL;
+
+        // Move to end of MEMORY.DAT
+        res = f_lseek(&game, f_size(&game));
+        if (res != FR_OK)
+        {
+            f_close(&game);
+            goto FATAL;
+        }
+
+        // Write chunk
+        res = f_write(&game, stack, br, &bw);
+        f_close(&game);
+        if (res != FR_OK || bw != br)
+            goto FATAL;
+
+        pos += br;
+
+        // Re-open GAME.DAT for reading at next position
+        f_close(&game);
+        res = f_open(&game, game_name, FA_READ);
+        if (res != FR_OK)
+            goto FATAL;
+        f_lseek(&game, pos);
+    }
+
+    f_close(&game);
+
+    // Re-open MEMORY.DAT for read/write if needed later
+    res = f_open(&game, memory_name, FA_READ | FA_WRITE);
+    if (res != FR_OK)
+        goto FATAL;
+
+    return;
+
+FATAL:
+    fatal();
 }                               /* open_story */
 
 
