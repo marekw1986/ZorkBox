@@ -561,26 +561,46 @@ void z_tokenise( int argc, zword_t * argv )
 int input_character( int timeout )
 {
     uint8_t c;
+    uint32_t hal_timeout;
 
-    if (HAL_UART_Receive(&huart2, &c, 1, timeout) == HAL_OK)
+    if (timeout == 0) {
+        hal_timeout = HAL_MAX_DELAY;       // block forever
+    }
+    else {
+        hal_timeout = timeout * 100;       // tenths of second → ms
+    }
+
+    if (HAL_UART_Receive(&huart2, &c, 1, hal_timeout) == HAL_OK)
     {
-        /* Bureaucracy expects CR, not NL. */
         return (c == '\n') ? '\r' : c;
     }
 
-    return -1;  // timeout or error
+    return -1;
 }                               /* input_character */
 
-int input_line( int buflen, unsigned long addr, int timeout, int *read_size )
+int input_line(int buflen, unsigned long addr, int timeout, int *read_size)
 {
     uint8_t c = 0;
+    uint32_t hal_timeout;
+
+    if (timeout == 0) {
+        hal_timeout = HAL_MAX_DELAY;
+    }
+    else {
+        hal_timeout = timeout * 100;   // tenths of seconds → ms
+    }
 
     *read_size = 0;
 
     do
     {
-        if (HAL_UART_Receive(&huart2, &c, 1, timeout) == HAL_OK)
+        if (HAL_UART_Receive(&huart2, &c, 1, hal_timeout) == HAL_OK)
         {
+            if (c == '\r')
+                c = '\n';
+
+            HAL_UART_Transmit(&huart2, &c, 1, HAL_MAX_DELAY); // optional echo
+
             if ((c != '\n') && (*read_size < buflen))
             {
                 (*read_size)++;
@@ -589,7 +609,7 @@ int input_line( int buflen, unsigned long addr, int timeout, int *read_size )
         }
         else
         {
-            return -1;   // timeout or error
+            return -1;
         }
 
     } while (c != '\n');

@@ -71,7 +71,7 @@ static void MX_TIM4_Init(void);
 void StartDefaultTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
-static void sd_write (void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -438,29 +438,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-static void sd_write (void) {
-    FRESULT res;
-    FIL file;
-
-    res = f_open(&file, "0:/test.txt", (FA_OPEN_ALWAYS | FA_WRITE));
-    if (res != FR_OK) {
-        printf("f_open error code: %i\r\n", res);
-        return;
-    }
-    if (f_size(&file) == 0) {
-        f_puts("To jest pierwsza linia\r\n", &file);
-    }
-    else {
-        res = f_lseek(&file, f_size(&file));
-        if (res != FR_OK) {
-            printf("f_lseek error code: %i\r\n", res);
-            f_close(&file);
-            return;
-        }
-    }
-    f_puts("To jest test.\n", &file);
-    f_close(&file);
-}
 
 int _write(int file, char *data, int len)
 {
@@ -502,11 +479,11 @@ void StartDefaultTask(void const * argument)
 
 	for(;;)
 	{
-		sd_write();
-		osDelay(1000);
-		printf("Test\r\n");
-
 		interpret();
+		osDelay(1);
+//		printf("Test\r\n");
+
+
 	}
   /* USER CODE END 5 */
 }
