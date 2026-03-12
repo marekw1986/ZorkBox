@@ -39,7 +39,11 @@
   *
   */
 
+#include <ctype.h>
 #include "ztypes.h"
+#include "stm32f4xx_hal.h"
+
+extern UART_HandleTypeDef huart2;
 
 /* Statically defined word separator list */
 
@@ -556,32 +560,39 @@ void z_tokenise( int argc, zword_t * argv )
 
 int input_character( int timeout )
 {
-	int c = '\0';		//TODO!
-//    int c = getchar(  );
+    uint8_t c;
 
-    /* Bureaucracy expects CR, not NL.  */
-    return ( ( c == '\n' ) ? '\r' : c );
+    if (HAL_UART_Receive(&huart2, &c, 1, timeout) == HAL_OK)
+    {
+        /* Bureaucracy expects CR, not NL. */
+        return (c == '\n') ? '\r' : c;
+    }
+
+    return -1;  // timeout or error
 }                               /* input_character */
 
 int input_line( int buflen, unsigned long addr, int timeout, int *read_size )
 {
-    int c = 0;
+    uint8_t c = 0;
 
-//    *read_size = 0;
-//
-//    do
-//    {
-//        if(Serial.available() > 0)
-//        {
-//            c = Serial.read();
-//            if ( (c != '\n') && (*read_size < buflen) )
-//            {
-//                ( *read_size )++;
-//                write_data_byte(&addr, tolower(c));
-//            }
-//        }
-//    }
-//    while ( c != '\n' );
+    *read_size = 0;
+
+    do
+    {
+        if (HAL_UART_Receive(&huart2, &c, 1, timeout) == HAL_OK)
+        {
+            if ((c != '\n') && (*read_size < buflen))
+            {
+                (*read_size)++;
+                write_data_byte(&addr, tolower(c));
+            }
+        }
+        else
+        {
+            return -1;   // timeout or error
+        }
+
+    } while (c != '\n');
 
     return c;
 }                               /* input_line */

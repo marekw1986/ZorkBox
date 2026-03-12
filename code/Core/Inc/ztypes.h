@@ -250,7 +250,7 @@ typedef short ZINT16;           /*   signed 2 byte quantity */
 
 #define ON     1
 #define OFF    0
-#define RESET -1
+#define Z_RESET -1
 
 #define Z_SCREEN      255
 #define TEXT_WINDOW   0
