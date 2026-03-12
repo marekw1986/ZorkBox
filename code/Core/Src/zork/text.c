@@ -42,6 +42,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "ztypes.h"
+#include "stm32f4xx_hal.h"
+
+extern UART_HandleTypeDef huart2;
 
 
 /*
@@ -550,11 +553,12 @@ void write_char( int c )
              if(line_count >= 80)
              {
                  line_count = 1;
-//                 Serial.write('\n');		// TODO!!!
+                 const uint8_t newlinechr = '\n';
+                 HAL_UART_Transmit(&huart2, &newlinechr, 1, HAL_MAX_DELAY);
              }
          }
          
-//         Serial.write(c);			//TODO!!!!
+         HAL_UART_Transmit(&huart2, (uint8_t*)&c, 1, HAL_MAX_DELAY);
     }
 }                               /* write_char */
 
