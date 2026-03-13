@@ -44,11 +44,17 @@
 #include "fatfs.h"
 #include "ztypes.h"
 
+#define MAX_DYNAMIC_MEMORY	64*1024
+
 /* Static data */
 
 extern int GLOBALVER;
 
+uint16_t dynamic_size = 0;
+uint8_t dynamic_memory[MAX_DYNAMIC_MEMORY];
 FIL game;        /* Zcode file pointer */
+
+static uint16_t f_get_word(FIL *file, uint32_t addr);
 
 /*
  * open_story
@@ -60,68 +66,22 @@ FIL game;        /* Zcode file pointer */
 void open_story(void)
 {
     FRESULT res;
-    UINT br, bw;
-    uint32_t pos = 0;
-    const char memory_name[] = "MEMORY.DAT";
+    UINT br;
     const char game_name[]   = "GAME.DAT";
 
-    // 1. Open MEMORY.DAT for read/write, create if not exist, truncate
-    res = f_open(&game, memory_name, FA_READ | FA_WRITE | FA_CREATE_ALWAYS);
-    if (res != FR_OK)
-        goto FATAL;
-    f_close(&game);
-
-    // 2. Open GAME.DAT for read
     res = f_open(&game, game_name, FA_READ);
     if (res != FR_OK)
         goto FATAL;
 
-    f_lseek(&game, 0);  // start at beginning
-
-    while (1)
-    {
-        res = f_read(&game, stack, sizeof(stack), &br);
-        if (res != FR_OK)
-            goto FATAL;
-        if (br == 0)  // EOF
-            break;
-
-        // Open MEMORY.DAT for writing/appending
-        f_close(&game);
-        res = f_open(&game, memory_name, FA_WRITE);
-        if (res != FR_OK)
-            goto FATAL;
-
-        // Move to end of MEMORY.DAT
-        res = f_lseek(&game, f_size(&game));
-        if (res != FR_OK)
-        {
-            f_close(&game);
-            goto FATAL;
-        }
-
-        // Write chunk
-        res = f_write(&game, stack, br, &bw);
-        f_close(&game);
-        if (res != FR_OK || bw != br)
-            goto FATAL;
-
-        pos += br;
-
-        // Re-open GAME.DAT for reading at next position
-        f_close(&game);
-        res = f_open(&game, game_name, FA_READ);
-        if (res != FR_OK)
-            goto FATAL;
-        f_lseek(&game, pos);
+    dynamic_size  = f_get_word(&game, 0x0E);
+    if (dynamic_size > sizeof(dynamic_memory)) {
+    	printf("Nor enough memory for dynamic data\r\n");
+    	goto FATAL;
     }
 
-    f_close(&game);
-
-    // Re-open MEMORY.DAT for read/write if needed later
-    res = f_open(&game, memory_name, FA_READ | FA_WRITE);
-    if (res != FR_OK)
-        goto FATAL;
+    f_lseek(&game, 0);  // start at beginning
+    f_read(&game, dynamic_memory, dynamic_size, &br);
+    f_lseek(&game, 0);  // start at beginning
 
     return;
 
@@ -343,39 +303,48 @@ void write_data_word( unsigned long *addr, zword_t value)
 *
 */
 
-zbyte_t read_data_byte( unsigned long *addr )
+zbyte_t read_data_byte(unsigned long *addr)
 {
-    zbyte_t value = 0;
+    zbyte_t value;
     UINT br;
 
-    /* Seek to requested address */
-    f_lseek(&game, *addr);
+    if (*addr < dynamic_size)
+    {
+        value = dynamic_memory[*addr];
+    }
+    else
+    {
+        f_lseek(&game, *addr);
+        f_read(&game, &value, 1, &br);
+    }
 
-    /* Read one byte */
-    f_read(&game, &value, 1, &br);
-
-    /* Update the address */
     (*addr)++;
 
     return value;
-}                               /* read_data_byte */
+}                              /* read_data_byte */
 
 void write_data_byte(unsigned long *addr, zbyte_t value)
 {
-    UINT bw;
+    if (*addr < dynamic_size)
+    {
+        dynamic_memory[*addr] = value;
+    }
 
-    /* Seek to requested address */
-    f_lseek(&game, *addr);
-
-    /* Write one byte */
-    f_write(&game, &value, 1, &bw);
-
-    /* Update the address */
     (*addr)++;
-}                               /* write_data_byte */
+}                              /* write_data_byte */
 
 zbyte_t get_byte(unsigned long offset){ unsigned long addr = offset; return read_data_byte(&addr); }
 zword_t get_word(unsigned long offset){ unsigned long addr = offset; return read_data_word(&addr);}
 void set_byte(unsigned long offset, zbyte_t value){ unsigned long addr = offset; write_data_byte(&addr, value);}
 void set_word(unsigned long offset, zword_t value){ unsigned long addr = offset; write_data_word(&addr, value);}
+
+static uint16_t f_get_word(FIL *file, uint32_t addr) {
+    uint8_t buf[2];
+    UINT br;
+
+    f_lseek(file, addr);
+    f_read(file, buf, 2, &br);
+
+    return ((uint16_t)buf[0] << 8) | buf[1];   // Z-machine uses big-endian
+}
 
