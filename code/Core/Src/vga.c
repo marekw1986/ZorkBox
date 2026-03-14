@@ -27,7 +27,7 @@ uint16_t scanline[SCANLINE_LEN];
 
 void fill_scanline(void) {
 	for(int i=0; i<SCANLINE_LEN; i++) {
-		scanline[i] = 0xFFFF;
+		scanline[i] = vga_colors[VGA_COLOR_BLACK];
 	}
 }
 
