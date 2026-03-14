@@ -75,7 +75,7 @@ void open_story(void)
 
     dynamic_size  = f_get_word(&game, 0x0E);
     if (dynamic_size > sizeof(dynamic_memory)) {
-    	printf("Nor enough memory for dynamic data\r\n");
+    	printf("Not enough memory for dynamic data\r\n");
     	goto FATAL;
     }
 
