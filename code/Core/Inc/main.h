@@ -67,16 +67,6 @@ void Error_Handler(void);
 #define PS2_DATA_GPIO_Port GPIOA
 #define HSYNC_Pin GPIO_PIN_15
 #define HSYNC_GPIO_Port GPIOA
-#define RED0_Pin GPIO_PIN_3
-#define RED0_GPIO_Port GPIOB
-#define RED1_Pin GPIO_PIN_4
-#define RED1_GPIO_Port GPIOB
-#define GREEN0_Pin GPIO_PIN_5
-#define GREEN0_GPIO_Port GPIOB
-#define GREEN1_Pin GPIO_PIN_6
-#define GREEN1_GPIO_Port GPIOB
-#define BLUE0_Pin GPIO_PIN_7
-#define BLUE0_GPIO_Port GPIOB
 #define BLUE1_Pin GPIO_PIN_8
 #define BLUE1_GPIO_Port GPIOB
 #define VSYNC_Pin GPIO_PIN_9
