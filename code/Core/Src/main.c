@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <sys/unistd.h> // STDOUT_FILENO, STDERR_FILENO
 #include "ztypes.h"
+#include "vga.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -549,6 +550,7 @@ void StartDefaultTask(void const * argument)
 	configure(V1, V8);
 	initialize_screen();
 	z_restart();
+	vga_init();
 
 	for(;;)
 	{
