@@ -9,5 +9,7 @@
 #define INC_VGA_H_
 
 void vga_init(void);
+void vga_refresh_line_number(void);
+void vga_prepare_next_dma(void);
 
 #endif /* INC_VGA_H_ */

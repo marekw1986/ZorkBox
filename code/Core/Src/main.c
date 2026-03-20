@@ -121,9 +121,12 @@ int main(void)
   MX_TIM4_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
+  HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);  // HSYNC (highest)
+  HAL_NVIC_SetPriority(TIM4_IRQn, 1, 0);  // VSYNC
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);   // HSYNC
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);   // VSYNC
   HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_2);
+  HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_3);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -367,6 +370,10 @@ static void MX_TIM4_Init(void)
   {
     Error_Handler();
   }
+  if (HAL_TIM_OC_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
   if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
   {
     Error_Handler();
@@ -383,10 +390,17 @@ static void MX_TIM4_Init(void)
   {
     Error_Handler();
   }
+  sConfigOC.OCMode = TIM_OCMODE_TIMING;
+  sConfigOC.Pulse = 35;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_OC_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 2;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
@@ -574,7 +588,7 @@ void StartDefaultTask(void const * argument)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
-
+  vga_refresh_line_number();
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM1)
   {
