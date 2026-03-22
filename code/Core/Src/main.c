@@ -126,7 +126,7 @@ int main(void)
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);   // HSYNC
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);   // VSYNC
   HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_2);
-  HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_3);
+  HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_3);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
