@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include "main.h"
 #include "vga.h"
+#include "vga_font.h"
 
 #define VISIBLE_START	35
 #define VISIBLE_END		514
@@ -60,6 +61,24 @@ inline void fill_scanline(void) {
 //	scanline[SCANLINE_LEN] = 0x00;
 	scanline[0] = 0xF0;
 	scanline[1] = 0x00;
+}
+
+static inline void fill_scanline2(void) {
+	// First determine which line from the buffer we need
+	const uint16_t visible_line = line - VISIBLE_START;
+	const uint8_t vga_buf_y = visible_line / 16;
+	const uint8_t vga_buf_glyph = visible_line % 16;
+	const uint8_t* vga_buf_row = (uint8_t*)&vga_buffer[vga_buf_y * VGA_COLS];
+	for (int x=0; x<SCANLINE_LEN; x++) {
+		const uint8_t current_char = vga_buf_row[x];
+		if (current_char < 32 || current_char > 126) {
+			scanline[x] = 0x00;
+		}
+		else {
+			const uint8_t* glyph_ptr = fonts[current_char-32];
+			scanline[x] = glyph_ptr[vga_buf_glyph];
+		}
+	}
 }
 
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
