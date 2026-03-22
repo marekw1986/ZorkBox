@@ -31,7 +31,7 @@ volatile uint16_t line = 0;
 volatile uint8_t vFlag = 0x00;
 uint8_t scanline[SCANLINE_LEN+1];
 
-void fill_scanline(void);
+static void fill_scanline(void);
 void vga_dma_complete_callback(DMA_HandleTypeDef *hdma);
 
 void vga_init(void) {
@@ -58,16 +58,7 @@ inline void vga_refresh_line_number(void) {
 	vFlag = (line < VISIBLE_END);
 }
 
-inline void fill_scanline(void) {
-//	for(int i=0; i<SCANLINE_LEN; i++) {
-//		scanline[i] = 0xF0;;
-//	}
-//	scanline[SCANLINE_LEN] = 0x00;
-	scanline[0] = 0xF0;
-	scanline[1] = 0x00;
-}
-
-static inline void fill_scanline2(void) {
+static void fill_scanline(void) {
 	// First determine which line from the buffer we need
 	const uint16_t visible_line = line - VISIBLE_START;
 	const uint8_t vga_buf_y = visible_line / 16;
