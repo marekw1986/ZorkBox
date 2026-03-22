@@ -6,6 +6,7 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 #include "main.h"
 #include "vga.h"
 #include "vga_font.h"
@@ -31,22 +32,25 @@ volatile uint8_t vFlag = 0x00;
 uint8_t scanline[SCANLINE_LEN+1];
 
 void fill_scanline(void);
+void vga_dma_complete_callback(DMA_HandleTypeDef *hdma);
 
 void vga_init(void) {
+	memset(vga_buffer, 0x00, sizeof(vga_buffer));
+	for (int i=0; i<96; i++) {
+		vga_buffer[i] = i+32;
+	}
+
 	fill_scanline();
 
-//    // Make sure SPI DMA is enabled
-//    SPI1->CR2 |= SPI_CR2_TXDMAEN;
-//
-//    // Prepare first transfer
-//    hdma_spi1_tx.Instance->CR &= ~DMA_SxCR_EN;
-//    while (hdma_spi1_tx.Instance->CR & DMA_SxCR_EN) {}
-//
-//    hdma_spi1_tx.Instance->M0AR = (uint32_t)scanline;
-//    hdma_spi1_tx.Instance->NDTR = SCANLINE_LEN + 1;
-//
-//    SPI1->CR1 |= SPI_CR1_SPE;   // ensure SPI enabled
-//    SPI1->DR = 0x00;
+	hdma_spi1_tx.XferCpltCallback = vga_dma_complete_callback;
+
+	hdma_spi1_tx.Instance->CR &= ~DMA_SxCR_EN;
+	while (hdma_spi1_tx.Instance->CR & DMA_SxCR_EN);
+
+    hdma_spi1_tx.Instance->M0AR = (uint32_t)scanline;
+    hdma_spi1_tx.Instance->NDTR = SCANLINE_LEN+1;
+
+	hdma_spi1_tx.Instance->CR |= DMA_SxCR_EN;
 }
 
 inline void vga_refresh_line_number(void) {
@@ -89,8 +93,9 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
 //        fill_scanline();
 //    	if (line >= VISIBLE_START && line < VISIBLE_END) {
 		if (vFlag) {
-//    		hdma_spi1_tx.Instance->CR |= DMA_SxCR_EN;
-    		HAL_SPI_Transmit_DMA(&hspi1, scanline, 2);
+    		//HAL_SPI_Transmit_DMA(&hspi1, scanline, 2);
+			hdma_spi1_tx.Instance->CR |= DMA_SxCR_EN;
+
     	}
     }
 
@@ -101,18 +106,14 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
     }
 }
 
-//void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
-//{
-//    if (hspi->Instance == SPI1)
-//    {
-//        fill_scanline();
-//        hdma_spi1_tx.Instance->M0AR = (uint32_t)scanline;
-//        hdma_spi1_tx.Instance->NDTR = SCANLINE_LEN + 1;
-//    }
-//}
-
-void vga_prepare_next_dma(void) {
-    fill_scanline();
-    hdma_spi1_tx.Instance->M0AR = (uint32_t)scanline;
-    hdma_spi1_tx.Instance->NDTR = SCANLINE_LEN + 1;
+void vga_dma_complete_callback(DMA_HandleTypeDef *hdma)
+{
+    if (hdma == &hdma_spi1_tx)
+    {
+    	fill_scanline();
+        // Disable DMA
+        hdma_spi1_tx.Instance->CR &= ~DMA_SxCR_EN;
+        // Reload
+        hdma_spi1_tx.Instance->NDTR = SCANLINE_LEN+1;
+    }
 }
