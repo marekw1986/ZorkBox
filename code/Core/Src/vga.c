@@ -58,11 +58,6 @@ void vga_init(void) {
 //	hdma_spi1_tx.Instance->CR |= DMA_SxCR_EN;
 }
 
-inline void vga_refresh_line_number(void) {
-//	line = __HAL_TIM_GET_COUNTER(&htim4);
-//	vFlag = (line < VISIBLE_END);
-}
-
 static void fill_scanline(void) {
 	// First determine which line from the buffer we need
 	const uint8_t vga_buf_y = line / 16;
@@ -80,13 +75,6 @@ static void fill_scanline(void) {
 		}
 	}
 }
-
-//static void fill_scanline(void) {
-//	const uint8_t shift = line % 8;
-//	const uint8_t pattern = 1 << shift;
-//	memset(scanline[active_scanline], pattern, SCANLINE_LEN);
-//	scanline[active_scanline][SCANLINE_LEN] = 0x00;
-//}
 
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
 {
@@ -111,18 +99,6 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
     	vFlag = 0x01;
     }
 }
-
-//void vga_dma_complete_callback(DMA_HandleTypeDef *hdma)
-//{
-//    if (hdma == &hdma_spi1_tx)
-//    {
-////    	fill_scanline();
-//        // Disable DMA
-//        hdma_spi1_tx.Instance->CR &= ~DMA_SxCR_EN;
-//        // Reload
-//        hdma_spi1_tx.Instance->NDTR = SCANLINE_LEN+1;
-//    }
-//}
 
 HAL_StatusTypeDef vga_transmit_line_DMA(void)
 {
