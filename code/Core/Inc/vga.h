@@ -9,5 +9,6 @@
 #define INC_VGA_H_
 
 void vga_init(void);
+void vga_end_line_callback(void);
 
 #endif /* INC_VGA_H_ */

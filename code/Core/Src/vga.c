@@ -244,8 +244,15 @@ static void vga_dma_transmit_cplt(DMA_HandleTypeDef *hdma)
   }
 
   /* Call user Tx complete callback */
-  line++;
-  if (line > 480) {
-	  line = vFlag = 0;
-  }
+//  line++;
+//  if (line > 480) {
+//	  line = vFlag = 0;
+//  }
+}
+
+void vga_end_line_callback(void) {
+	  line++;
+	  if (line > 480) {
+		  line = vFlag = 0;
+	  }
 }
