@@ -59,33 +59,34 @@ void vga_init(void) {
 }
 
 inline void vga_refresh_line_number(void) {
-	line = __HAL_TIM_GET_COUNTER(&htim4);
-	vFlag = (line < VISIBLE_END);
+//	line = __HAL_TIM_GET_COUNTER(&htim4);
+//	vFlag = (line < VISIBLE_END);
+}
+
+static void fill_scanline(void) {
+	// First determine which line from the buffer we need
+	const uint8_t vga_buf_y = line / 16;
+	const uint8_t vga_buf_glyph = line % 16;
+	const uint8_t* vga_buf_row = (uint8_t*)&vga_buffer[vga_buf_y * VGA_COLS];
+	uint8_t* dst = scanline[active_scanline];
+	for (int x=0; x<SCANLINE_LEN; x++) {
+		const uint8_t current_char = vga_buf_row[x];
+		if (current_char < 32 || current_char > 126) {
+			dst[x] = 0x00;
+		}
+		else {
+			const uint8_t* glyph_ptr = fonts[current_char-32];
+			dst[x] = glyph_ptr[vga_buf_glyph];
+		}
+	}
 }
 
 //static void fill_scanline(void) {
-//	// First determine which line from the buffer we need
-//	const uint16_t visible_line = line - VISIBLE_START;
-//	const uint8_t vga_buf_y = visible_line / 16;
-//	const uint8_t vga_buf_glyph = visible_line % 16;
-//	const uint8_t* vga_buf_row = (uint8_t*)&vga_buffer[vga_buf_y * VGA_COLS];
-//	uint8_t* dst = scanline[active_scanline];
-//	for (int x=0; x<SCANLINE_LEN; x++) {
-//		const uint8_t current_char = vga_buf_row[x];
-//		if (current_char < 32 || current_char > 126) {
-//			dst[x] = 0x00;
-//		}
-//		else {
-//			const uint8_t* glyph_ptr = fonts[current_char-32];
-//			dst[x] = glyph_ptr[vga_buf_glyph];
-//		}
-//	}
+//	const uint8_t shift = line % 8;
+//	const uint8_t pattern = 1 << shift;
+//	memset(scanline[active_scanline], pattern, SCANLINE_LEN);
+//	scanline[active_scanline][SCANLINE_LEN] = 0x00;
 //}
-
-static void fill_scanline(void) {
-	memset(scanline[active_scanline], 0xF0, SCANLINE_LEN);
-	scanline[active_scanline][SCANLINE_LEN] = 0x00;
-}
 
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
 {
@@ -125,23 +126,18 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
 
 HAL_StatusTypeDef vga_transmit_line_DMA(void)
 {
-  const uint16_t Size = SCANLINE_LEN+1;
+  const uint16_t size = SCANLINE_LEN+1;
 
   /* Check tx dma handle */
-  assert_param(IS_SPI_DMA_HANDLE(hspi1.hdmatx));
+//  assert_param(IS_SPI_DMA_HANDLE(hspi1.hdmatx));
 
   /* Check Direction parameter */
-  assert_param(IS_SPI_DIRECTION_2LINES_OR_1LINE(hspi1.Init.Direction));
+//  assert_param(IS_SPI_DIRECTION_2LINES_OR_1LINE(hspi1.Init.Direction));
 
   if (hspi1.State != HAL_SPI_STATE_READY)
   {
     return HAL_BUSY;
   }
-
-//  if ((pData == NULL) || (Size == 0U))
-//  {
-//    return HAL_ERROR;
-//  }
 
   /* Process Locked */
   __HAL_LOCK(&hspi1);
@@ -150,8 +146,8 @@ HAL_StatusTypeDef vga_transmit_line_DMA(void)
   hspi1.State       = HAL_SPI_STATE_BUSY_TX;
   hspi1.ErrorCode   = HAL_SPI_ERROR_NONE;
   hspi1.pTxBuffPtr  = (const uint8_t *)scanline[active_scanline];
-  hspi1.TxXferSize  = Size;
-  hspi1.TxXferCount = Size;
+  hspi1.TxXferSize  = size;
+  hspi1.TxXferCount = size;
 
   /* Init field not used in handle to zero */
   hspi1.pRxBuffPtr  = (uint8_t *)NULL;
@@ -161,12 +157,12 @@ HAL_StatusTypeDef vga_transmit_line_DMA(void)
   hspi1.RxXferCount = 0U;
 
   /* Configure communication direction : 1Line */
-  if (hspi1.Init.Direction == SPI_DIRECTION_1LINE)
-  {
+//  if (hspi1.Init.Direction == SPI_DIRECTION_1LINE)
+//  {
     /* Disable SPI Peripheral before set 1Line direction (BIDIOE bit) */
     __HAL_SPI_DISABLE(&hspi1);
     SPI_1LINE_TX(&hspi1);
-  }
+//  }
 
   /* Set the SPI TxDMA Half transfer complete callback */
   hspi1.hdmatx->XferHalfCpltCallback = NULL;
@@ -270,10 +266,10 @@ static void vga_dma_transmit_cplt(DMA_HandleTypeDef *hdma)
       return;
     }
   }
+
   /* Call user Tx complete callback */
-#if (USE_HAL_SPI_REGISTER_CALLBACKS == 1U)
-  hspi->TxCpltCallback(hspi);
-#else
-  HAL_SPI_TxCpltCallback(hspi);
-#endif /* USE_HAL_SPI_REGISTER_CALLBACKS */
+  line++;
+  if (line > 480) {
+	  line = vFlag = 0;
+  }
 }
