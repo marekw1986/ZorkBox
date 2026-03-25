@@ -26,6 +26,7 @@ extern DMA_HandleTypeDef hdma_spi1_tx;
 
 char vga_buffer[VGA_COLS * VGA_ROWS];
 uint16_t vga_cursor = 0;
+uint32_t cursor_timer = 0;
 
 const uint8_t null_byte = 0x00;
 volatile uint16_t line = 0;
@@ -41,11 +42,7 @@ HAL_StatusTypeDef vga_transmit_line_DMA(void);
 void vga_dma_complete_callback(DMA_HandleTypeDef *hdma);
 
 void vga_init(void) {
-	memset(vga_buffer, 0x00, sizeof(vga_buffer));
-	for (int i=0; i<96; i++) {
-		vga_buffer[i] = i+32;
-	}
-
+	memset(vga_buffer, ' ', sizeof(vga_buffer));
 	fill_scanline();
 
 //	hdma_spi1_tx.XferCpltCallback = vga_dma_complete_callback;
@@ -60,7 +57,6 @@ void vga_init(void) {
 }
 
 void vga_putc(const char c) {
-	while (vFlag);
 	switch (c) {
 		case '\r':
 		{
@@ -75,6 +71,7 @@ void vga_putc(const char c) {
 
 		default:
 		if (c < 32 || c > 126) break;
+		while (vFlag);
 		vga_buffer[vga_cursor] = c;
 		vga_cursor++;
 		if (vga_cursor >= VGA_COLS * VGA_ROWS) {
@@ -284,5 +281,16 @@ inline void vga_end_line_callback(void) {
 	  line++;
 	  if (line > 480) {
 		  line = vFlag = 0;
+		  uint32_t current_time = HAL_GetTick();
+		  if ((uint32_t)(current_time > cursor_timer + 500)) {
+			  if (vga_buffer[vga_cursor] == ' ') {
+				  vga_buffer[vga_cursor] = '_';
+			  }
+			  else {
+				  vga_buffer[vga_cursor] = ' ';
+			  }
+			  cursor_timer = current_time;
+		  }
+
 	  }
 }

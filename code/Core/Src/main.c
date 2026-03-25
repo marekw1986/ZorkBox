@@ -122,6 +122,7 @@ int main(void)
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
   HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);  // HSYNC (highest)
+  HAL_NVIC_SetPriority(DMA2_Stream2_IRQn, 0, 1); // SPI DMA
   HAL_NVIC_SetPriority(TIM4_IRQn, 1, 0);  // VSYNC
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);   // HSYNC
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);   // VSYNC
@@ -459,10 +460,10 @@ static void MX_DMA_Init(void)
   HAL_NVIC_SetPriority(DMA2_Stream2_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream2_IRQn);
   /* DMA2_Stream3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
   /* DMA2_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
 
 }
