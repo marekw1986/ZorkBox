@@ -14,7 +14,7 @@
 #define VISIBLE_START	35
 #define VISIBLE_END		514
 
-#define SCANLINE_LEN	40	// TEMP
+#define SCANLINE_LEN	60	// TEMP
 
 #define VGA_COLS	80
 #define VGA_ROWS	30
@@ -25,6 +25,7 @@ extern TIM_HandleTypeDef htim4;
 extern DMA_HandleTypeDef hdma_spi1_tx;
 
 char vga_buffer[VGA_COLS * VGA_ROWS];
+uint16_t vga_cursor = 0;
 
 const uint8_t null_byte = 0x00;
 volatile uint16_t line = 0;
@@ -56,6 +57,35 @@ void vga_init(void) {
 //    hdma_spi1_tx.Instance->NDTR = SCANLINE_LEN+1;
 //
 //	hdma_spi1_tx.Instance->CR |= DMA_SxCR_EN;
+}
+
+void vga_putc(const char c) {
+	while (vFlag);
+	switch (c) {
+		case '\r':
+		{
+			uint16_t row = vga_cursor / VGA_COLS;
+			vga_cursor = row * VGA_COLS;
+		}
+		break;
+
+		case '\n':
+		vga_cursor = ((vga_cursor / VGA_COLS) + 1) * VGA_COLS;
+		break;
+
+		default:
+		if (c < 32 || c > 126) break;
+		vga_buffer[vga_cursor] = c;
+		vga_cursor++;
+		if (vga_cursor >= VGA_COLS * VGA_ROWS) {
+		    // scroll up
+		    memmove(vga_buffer, vga_buffer + VGA_COLS, VGA_COLS * (VGA_ROWS - 1));
+		    // clear last line
+		    memset(vga_buffer + VGA_COLS * (VGA_ROWS - 1), ' ', VGA_COLS);
+		    vga_cursor = VGA_COLS * (VGA_ROWS - 1);
+		}
+		break;
+	}
 }
 
 static void fill_scanline(void) {
@@ -250,7 +280,7 @@ static void vga_dma_transmit_cplt(DMA_HandleTypeDef *hdma)
 //  }
 }
 
-void vga_end_line_callback(void) {
+inline void vga_end_line_callback(void) {
 	  line++;
 	  if (line > 480) {
 		  line = vFlag = 0;
