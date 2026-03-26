@@ -26,7 +26,7 @@ extern DMA_HandleTypeDef hdma_spi1_tx;
 
 char vga_buffer[VGA_COLS * VGA_ROWS];
 uint16_t vga_cursor = 0;
-uint32_t cursor_timer = 0;
+uint8_t cursor_timer = 0;
 
 const uint8_t null_byte = 0x00;
 volatile uint16_t line = 0;
@@ -281,15 +281,15 @@ inline void vga_end_line_callback(void) {
 	  line++;
 	  if (line > 480) {
 		  line = vFlag = 0;
-		  uint32_t current_time = HAL_GetTick();
-		  if ((uint32_t)(current_time > cursor_timer + 500)) {
+		  cursor_timer++;
+		  if (cursor_timer > 30) {
 			  if (vga_buffer[vga_cursor] == ' ') {
 				  vga_buffer[vga_cursor] = '_';
 			  }
 			  else {
 				  vga_buffer[vga_cursor] = ' ';
 			  }
-			  cursor_timer = current_time;
+			  cursor_timer = 0;
 		  }
 
 	  }
