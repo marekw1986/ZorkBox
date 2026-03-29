@@ -171,10 +171,10 @@ HAL_StatusTypeDef vga_transmit_line_DMA(void)
   hspi1.hdmatx->XferHalfCpltCallback = NULL;
 
   /* Set the SPI TxDMA transfer complete callback */
-  hspi1.hdmatx->XferCpltCallback = vga_dma_transmit_cplt;
+  hspi1.hdmatx->XferCpltCallback = NULL;
 
   /* Set the DMA error callback */
-  hspi1.hdmatx->XferErrorCallback = vga_dma_error;
+  hspi1.hdmatx->XferErrorCallback = NULL;
 
   /* Set the DMA AbortCpltCallback */
   hspi1.hdmatx->XferAbortCallback = NULL;
@@ -209,88 +209,30 @@ HAL_StatusTypeDef vga_transmit_line_DMA(void)
   return HAL_OK;
 }
 
-static void vga_dma_error(DMA_HandleTypeDef *hdma)
-{
-  SPI_HandleTypeDef *hspi = (SPI_HandleTypeDef *)(((DMA_HandleTypeDef *)hdma)->Parent);
-
-  /* Stop the disable DMA transfer on SPI side */
-  CLEAR_BIT(hspi->Instance->CR2, SPI_CR2_TXDMAEN | SPI_CR2_RXDMAEN);
-
-  SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_DMA);
-  hspi->State = HAL_SPI_STATE_READY;
-  /* Call user error callback */
-#if (USE_HAL_SPI_REGISTER_CALLBACKS == 1U)
-  hspi->ErrorCallback(hspi);
-#else
-  HAL_SPI_ErrorCallback(hspi);
-#endif /* USE_HAL_SPI_REGISTER_CALLBACKS */
-}
-
-static void vga_dma_transmit_cplt(DMA_HandleTypeDef *hdma)
-{
-  SPI_HandleTypeDef *hspi = (SPI_HandleTypeDef *)(((DMA_HandleTypeDef *)hdma)->Parent);
-//  uint32_t tickstart;
-
-  /* Init tickstart for timeout management*/
-//  tickstart = HAL_GetTick();
-
-  /* DMA Normal Mode */
-  if ((hdma->Instance->CR & DMA_SxCR_CIRC) != DMA_SxCR_CIRC)
-  {
-    /* Disable ERR interrupt */
-    __HAL_SPI_DISABLE_IT(hspi, SPI_IT_ERR);
-
-    /* Disable Tx DMA Request */
-    CLEAR_BIT(hspi->Instance->CR2, SPI_CR2_TXDMAEN);
-
-    /* Check the end of the transaction */
-//    if (SPI_EndRxTxTransaction(hspi, SPI_DEFAULT_TIMEOUT, tickstart) != HAL_OK)
-//    {
-//      SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_FLAG);
-//    }
-
-    /* Clear overrun flag in 2 Lines communication mode because received data is not read */
-    if (hspi->Init.Direction == SPI_DIRECTION_2LINES)
-    {
-      __HAL_SPI_CLEAR_OVRFLAG(hspi);
-    }
-
-    hspi->TxXferCount = 0U;
-    hspi->State = HAL_SPI_STATE_READY;
-
-    if (hspi->ErrorCode != HAL_SPI_ERROR_NONE)
-    {
-      /* Call user error callback */
-#if (USE_HAL_SPI_REGISTER_CALLBACKS == 1U)
-      hspi->ErrorCallback(hspi);
-#else
-      HAL_SPI_ErrorCallback(hspi);
-#endif /* USE_HAL_SPI_REGISTER_CALLBACKS */
-      return;
-    }
-  }
-
-  /* Call user Tx complete callback */
-//  line++;
-//  if (line > 480) {
-//	  line = vFlag = 0;
-//  }
-}
-
 inline void vga_end_line_callback(void) {
-	  line++;
-	  if (line > 480) {
-		  line = vFlag = 0;
-		  cursor_timer++;
-		  if (cursor_timer > 30) {
-			  if (vga_buffer[vga_cursor] == ' ') {
-				  vga_buffer[vga_cursor] = '_';
-			  }
-			  else {
-				  vga_buffer[vga_cursor] = ' ';
-			  }
-			  cursor_timer = 0;
-		  }
 
+	/* Disable ERR interrupt */
+	__HAL_SPI_DISABLE_IT(&hspi1, SPI_IT_ERR);
+
+	/* Disable Tx DMA Request */
+	CLEAR_BIT(hspi1.Instance->CR2, SPI_CR2_TXDMAEN);
+
+	hspi1.TxXferCount = 0U;
+	hspi1.State = HAL_SPI_STATE_READY;
+
+	line++;
+	if (line > 480) {
+	  line = vFlag = 0;
+	  cursor_timer++;
+	  if (cursor_timer > 30) {
+		  if (vga_buffer[vga_cursor] == ' ') {
+			  vga_buffer[vga_cursor] = '_';
+		  }
+		  else {
+			  vga_buffer[vga_cursor] = ' ';
+		  }
+		  cursor_timer = 0;
 	  }
+
+	}
 }
