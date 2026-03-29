@@ -14,7 +14,7 @@
 #define VISIBLE_START	35
 #define VISIBLE_END		514
 
-#define SCANLINE_LEN	60	// TEMP
+#define SCANLINE_LEN	70	// TEMP
 
 #define VGA_COLS	80
 #define VGA_ROWS	30
@@ -38,10 +38,13 @@ static void fill_scanline(void);
 
 HAL_StatusTypeDef vga_transmit_line_DMA(void);
 void vga_dma_complete_callback(DMA_HandleTypeDef *hdma);
+HAL_StatusTypeDef vga_prepare_line_DMA(void);
+void vga_start_line_DMA(void);
 
 void vga_init(void) {
 	memset(vga_buffer, ' ', sizeof(vga_buffer));
 	fill_scanline();
+	vga_prepare_line_DMA();
 
 //	hdma_spi1_tx.XferCpltCallback = vga_dma_complete_callback;
 //
@@ -110,7 +113,8 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
 //    	if (line >= VISIBLE_START && line < VISIBLE_END) {
 		if (vFlag) {
 //    		HAL_SPI_Transmit_DMA(&hspi1, scanline[active_scanline], SCANLINE_LEN+1);
-			vga_transmit_line_DMA();
+			//vga_transmit_line_DMA();
+			vga_start_line_DMA();
     		active_scanline ^= 1;
     		fill_scanline();
 //			hdma_spi1_tx.Instance->CR |= DMA_SxCR_EN;
@@ -127,84 +131,54 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
 
 HAL_StatusTypeDef vga_transmit_line_DMA(void)
 {
-  const uint16_t size = SCANLINE_LEN+1;
+	vga_prepare_line_DMA();
+	vga_start_line_DMA();
+	return HAL_OK;
+}
 
-  /* Check tx dma handle */
-//  assert_param(IS_SPI_DMA_HANDLE(hspi1.hdmatx));
+HAL_StatusTypeDef vga_prepare_line_DMA(void)
+{
+    const uint16_t size = SCANLINE_LEN + 1;
 
-  /* Check Direction parameter */
-//  assert_param(IS_SPI_DIRECTION_2LINES_OR_1LINE(hspi1.Init.Direction));
+//    if (hspi1.State != HAL_SPI_STATE_READY)
+//        return HAL_BUSY;
 
-  if (hspi1.State != HAL_SPI_STATE_READY)
-  {
-    return HAL_BUSY;
-  }
+//    __HAL_LOCK(&hspi1);
 
-  /* Process Locked */
-  __HAL_LOCK(&hspi1);
+//    hspi1.State       = HAL_SPI_STATE_BUSY_TX;
+//    hspi1.ErrorCode   = HAL_SPI_ERROR_NONE;
+    hspi1.pTxBuffPtr  = (const uint8_t *)scanline[active_scanline];
+    hspi1.TxXferSize  = size;
+    hspi1.TxXferCount = size;
 
-  /* Set the transaction information */
-  hspi1.State       = HAL_SPI_STATE_BUSY_TX;
-  hspi1.ErrorCode   = HAL_SPI_ERROR_NONE;
-  hspi1.pTxBuffPtr  = (const uint8_t *)scanline[active_scanline];
-  hspi1.TxXferSize  = size;
-  hspi1.TxXferCount = size;
-
-  /* Init field not used in handle to zero */
-  hspi1.pRxBuffPtr  = (uint8_t *)NULL;
-  hspi1.TxISR       = NULL;
-  hspi1.RxISR       = NULL;
-  hspi1.RxXferSize  = 0U;
-  hspi1.RxXferCount = 0U;
-
-  /* Configure communication direction : 1Line */
-//  if (hspi1.Init.Direction == SPI_DIRECTION_1LINE)
-//  {
-    /* Disable SPI Peripheral before set 1Line direction (BIDIOE bit) */
     __HAL_SPI_DISABLE(&hspi1);
     SPI_1LINE_TX(&hspi1);
-//  }
 
-  /* Set the SPI TxDMA Half transfer complete callback */
-  hspi1.hdmatx->XferHalfCpltCallback = NULL;
+//    __HAL_UNLOCK(&hspi1);
 
-  /* Set the SPI TxDMA transfer complete callback */
-  hspi1.hdmatx->XferCpltCallback = NULL;
+    return HAL_OK;
+}
 
-  /* Set the DMA error callback */
-  hspi1.hdmatx->XferErrorCallback = NULL;
+void vga_start_line_DMA(void)
+{
+    if (HAL_DMA_Start_IT(
+            hspi1.hdmatx,
+            (uint32_t)hspi1.pTxBuffPtr,
+            (uint32_t)&hspi1.Instance->DR,
+            hspi1.TxXferCount) != HAL_OK)
+    {
+        return;
+    }
 
-  /* Set the DMA AbortCpltCallback */
-  hspi1.hdmatx->XferAbortCallback = NULL;
+    /* Enable SPI */
+    if ((hspi1.Instance->CR1 & SPI_CR1_SPE) == 0)
+        __HAL_SPI_ENABLE(&hspi1);
 
-  /* Enable the Tx DMA Stream/Channel */
-  if (HAL_OK != HAL_DMA_Start_IT(hspi1.hdmatx, (uint32_t)hspi1.pTxBuffPtr, (uint32_t)&hspi1.Instance->DR,
-		  hspi1.TxXferCount))
-  {
-    /* Update SPI error code */
-    SET_BIT(hspi1.ErrorCode, HAL_SPI_ERROR_DMA);
-    /* Process Unlocked */
-    __HAL_UNLOCK(&hspi1);
-    return HAL_ERROR;
-  }
+    /* Enable SPI DMA request */
+    SET_BIT(hspi1.Instance->CR2, SPI_CR2_TXDMAEN);
 
-  /* Check if the SPI is already enabled */
-  if ((hspi1.Instance->CR1 & SPI_CR1_SPE) != SPI_CR1_SPE)
-  {
-    /* Enable SPI peripheral */
-    __HAL_SPI_ENABLE(&hspi1);
-  }
-
-  /* Process Unlocked */
-  __HAL_UNLOCK(&hspi1);
-
-  /* Enable the SPI Error Interrupt Bit */
-  __HAL_SPI_ENABLE_IT(&hspi1, (SPI_IT_ERR));
-
-  /* Enable Tx DMA Request */
-  SET_BIT(hspi1.Instance->CR2, SPI_CR2_TXDMAEN);
-
-  return HAL_OK;
+    /* Enable error interrupt */
+    __HAL_SPI_ENABLE_IT(&hspi1, SPI_IT_ERR);
 }
 
 inline void vga_end_line_callback(void) {
@@ -231,6 +205,6 @@ inline void vga_end_line_callback(void) {
 		  }
 		  cursor_timer = 0;
 	  }
-
 	}
+	vga_prepare_line_DMA();
 }
