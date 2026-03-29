@@ -35,8 +35,6 @@ volatile uint8_t active_scanline = 0x00;
 uint8_t scanline[2][SCANLINE_LEN+1];
 
 static void fill_scanline(void);
-static void vga_dma_error(DMA_HandleTypeDef *hdma);
-static void vga_dma_transmit_cplt(DMA_HandleTypeDef *hdma);
 
 HAL_StatusTypeDef vga_transmit_line_DMA(void);
 void vga_dma_complete_callback(DMA_HandleTypeDef *hdma);
