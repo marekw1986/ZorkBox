@@ -55,6 +55,7 @@ void vga_init(void) {
 //    hdma_spi1_tx.Instance->NDTR = SCANLINE_LEN+1;
 //
 //	hdma_spi1_tx.Instance->CR |= DMA_SxCR_EN;
+	__HAL_SPI_ENABLE(&hspi1);
 }
 
 void vga_putc(const char c) {
@@ -138,7 +139,7 @@ HAL_StatusTypeDef vga_transmit_line_DMA(void)
 
 HAL_StatusTypeDef vga_prepare_line_DMA(void)
 {
-    const uint16_t size = SCANLINE_LEN + 1;
+//    const uint16_t size = SCANLINE_LEN + 1;
 
 //    if (hspi1.State != HAL_SPI_STATE_READY)
 //        return HAL_BUSY;
@@ -147,12 +148,12 @@ HAL_StatusTypeDef vga_prepare_line_DMA(void)
 
 //    hspi1.State       = HAL_SPI_STATE_BUSY_TX;
 //    hspi1.ErrorCode   = HAL_SPI_ERROR_NONE;
-    hspi1.pTxBuffPtr  = (const uint8_t *)scanline[active_scanline];
-    hspi1.TxXferSize  = size;
-    hspi1.TxXferCount = size;
+//    hspi1.pTxBuffPtr  = (const uint8_t *)scanline[active_scanline];
+//    hspi1.TxXferSize  = size;
+//    hspi1.TxXferCount = size;
 
-    __HAL_SPI_DISABLE(&hspi1);
-    SPI_1LINE_TX(&hspi1);
+//    __HAL_SPI_DISABLE(&hspi1);
+//    SPI_1LINE_TX(&hspi1);
 
 //    __HAL_UNLOCK(&hspi1);
 
@@ -161,24 +162,47 @@ HAL_StatusTypeDef vga_prepare_line_DMA(void)
 
 void vga_start_line_DMA(void)
 {
-    if (HAL_DMA_Start_IT(
-            hspi1.hdmatx,
-            (uint32_t)hspi1.pTxBuffPtr,
-            (uint32_t)&hspi1.Instance->DR,
-            hspi1.TxXferCount) != HAL_OK)
-    {
-        return;
-    }
+	const uint16_t size = SCANLINE_LEN + 1;
 
-    /* Enable SPI */
-    if ((hspi1.Instance->CR1 & SPI_CR1_SPE) == 0)
-        __HAL_SPI_ENABLE(&hspi1);
+//	HAL_DMA_Start_IT(
+//		&hdma_spi1_tx,
+//		(uint32_t)scanline[active_scanline],
+//		(uint32_t)&hspi1.Instance->DR,
+//		size);
+
+
+    /* Configure the source, destination address and the data length */
+//    DMA_SetConfig(hdma, SrcAddress, DstAddress, DataLength);
+
+	  /* Clear DBM bit */
+	hdma_spi1_tx.Instance->CR &= (uint32_t)(~DMA_SxCR_DBM);
+
+	  /* Configure DMA Stream data length */
+	hdma_spi1_tx.Instance->NDTR = size;
+
+    /* Configure DMA Stream destination address */
+	hdma_spi1_tx.Instance->PAR = (uint32_t)&hspi1.Instance->DR;
+
+    /* Configure DMA Stream source address */
+	hdma_spi1_tx.Instance->M0AR = (uint32_t)scanline[active_scanline];
+
+//    DMA_Base_Registers *regs = (DMA_Base_Registers *)hdma_spi1_tx.StreamBaseAddress;
+    /* Clear all interrupt flags at correct offset within the register */
+//	hdma_spi1_tx.StreamBaseAddress.IFCR = 0x3FU << hdma_spi1_tx.StreamIndex;
+
+    /* Enable Common interrupts*/
+    hdma_spi1_tx.Instance->CR  |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME;
+
+    /* Enable the Peripheral */
+    __HAL_DMA_ENABLE(&hdma_spi1_tx);
+
+
 
     /* Enable SPI DMA request */
     SET_BIT(hspi1.Instance->CR2, SPI_CR2_TXDMAEN);
 
     /* Enable error interrupt */
-    __HAL_SPI_ENABLE_IT(&hspi1, SPI_IT_ERR);
+//    __HAL_SPI_ENABLE_IT(&hspi1, SPI_IT_ERR);
 }
 
 inline void vga_end_line_callback(void) {
