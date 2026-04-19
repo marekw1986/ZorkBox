@@ -56,6 +56,12 @@ void vga_init(void) {
 //
 //	hdma_spi1_tx.Instance->CR |= DMA_SxCR_EN;
 	__HAL_SPI_ENABLE(&hspi1);
+
+    /* Configure DMA Stream destination address */
+	DMA2_Stream2->PAR = (uint32_t)&hspi1.Instance->DR;
+
+    /* Configure DMA Stream source address */
+	DMA2_Stream2->M0AR = (uint32_t)scanline[active_scanline];
 }
 
 void vga_putc(const char c) {
@@ -169,12 +175,6 @@ void vga_start_line_DMA(void)
 
 	  /* Configure DMA Stream data length */
 	DMA2_Stream2->NDTR = size;
-
-    /* Configure DMA Stream destination address */
-	DMA2_Stream2->PAR = (uint32_t)&hspi1.Instance->DR;
-
-    /* Configure DMA Stream source address */
-	DMA2_Stream2->M0AR = (uint32_t)scanline[active_scanline];
 
 //    DMA_Base_Registers *regs = (DMA_Base_Registers *)hdma_spi1_tx.StreamBaseAddress;
     /* Clear all interrupt flags at correct offset within the register */
