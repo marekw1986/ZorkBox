@@ -164,39 +164,28 @@ void vga_start_line_DMA(void)
 {
 	const uint16_t size = SCANLINE_LEN + 1;
 
-//	HAL_DMA_Start_IT(
-//		&hdma_spi1_tx,
-//		(uint32_t)scanline[active_scanline],
-//		(uint32_t)&hspi1.Instance->DR,
-//		size);
-
-
-    /* Configure the source, destination address and the data length */
-//    DMA_SetConfig(hdma, SrcAddress, DstAddress, DataLength);
-
 	  /* Clear DBM bit */
-	hdma_spi1_tx.Instance->CR &= (uint32_t)(~DMA_SxCR_DBM);
+	DMA2_Stream2->CR &= (uint32_t)(~DMA_SxCR_DBM);
 
 	  /* Configure DMA Stream data length */
-	hdma_spi1_tx.Instance->NDTR = size;
+	DMA2_Stream2->NDTR = size;
 
     /* Configure DMA Stream destination address */
-	hdma_spi1_tx.Instance->PAR = (uint32_t)&hspi1.Instance->DR;
+	DMA2_Stream2->PAR = (uint32_t)&hspi1.Instance->DR;
 
     /* Configure DMA Stream source address */
-	hdma_spi1_tx.Instance->M0AR = (uint32_t)scanline[active_scanline];
+	DMA2_Stream2->M0AR = (uint32_t)scanline[active_scanline];
 
 //    DMA_Base_Registers *regs = (DMA_Base_Registers *)hdma_spi1_tx.StreamBaseAddress;
     /* Clear all interrupt flags at correct offset within the register */
 //	hdma_spi1_tx.StreamBaseAddress.IFCR = 0x3FU << hdma_spi1_tx.StreamIndex;
 
     /* Enable Common interrupts*/
-    hdma_spi1_tx.Instance->CR  |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME;
+	DMA2_Stream2->CR  |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME;
 
     /* Enable the Peripheral */
-    __HAL_DMA_ENABLE(&hdma_spi1_tx);
-
-
+//    __HAL_DMA_ENABLE(&hdma_spi1_tx);
+    DMA2_Stream2->CR |=  DMA_SxCR_EN;
 
     /* Enable SPI DMA request */
     SET_BIT(hspi1.Instance->CR2, SPI_CR2_TXDMAEN);
@@ -208,13 +197,10 @@ void vga_start_line_DMA(void)
 inline void vga_end_line_callback(void) {
 
 	/* Disable ERR interrupt */
-	__HAL_SPI_DISABLE_IT(&hspi1, SPI_IT_ERR);
+//	__HAL_SPI_DISABLE_IT(&hspi1, SPI_IT_ERR);
 
 	/* Disable Tx DMA Request */
 	CLEAR_BIT(hspi1.Instance->CR2, SPI_CR2_TXDMAEN);
-
-	hspi1.TxXferCount = 0U;
-	hspi1.State = HAL_SPI_STATE_READY;
 
 	line++;
 	if (line > 480) {
