@@ -14,17 +14,14 @@
 #define VISIBLE_START	35
 #define VISIBLE_END		514
 
-#define SCANLINE_LEN	70	// TEMP
+#define SCANLINE_LEN	75	// TEMP
 
 #define VGA_COLS	80
 #define VGA_ROWS	30
 
-extern TIM_HandleTypeDef htim2;
-extern TIM_HandleTypeDef htim4;
-
 char vga_buffer[VGA_COLS * VGA_ROWS];
-uint16_t vga_cursor = 0;
-uint8_t cursor_timer = 0;
+volatile uint16_t vga_cursor = 0;
+volatile uint8_t cursor_timer = 0;
 
 const uint8_t null_byte = 0x00;
 volatile uint16_t line = 0;
@@ -32,9 +29,6 @@ volatile uint8_t vFlag = 0x00;
 volatile uint8_t active_scanline = 0x00;
 uint8_t scanline[2][SCANLINE_LEN+1];
 
-static void fill_scanline(void);
-
-void vga_transmit_line_DMA(void);
 void vga_dma_complete_callback(DMA_HandleTypeDef *hdma);
 void vga_prepare_line_DMA(void);
 void vga_start_line_DMA(void);
@@ -50,7 +44,7 @@ void vga_init(void) {
 	DMA2_Stream2->PAR = (uint32_t)&SPI1->DR;
 
     /* Configure DMA Stream source address */
-	DMA2_Stream2->M0AR = (uint32_t)scanline[active_scanline];
+	DMA2_Stream2->M0AR = (uint32_t)&scanline[active_scanline];
 }
 
 void vga_putc(const char c) {
@@ -82,7 +76,7 @@ void vga_putc(const char c) {
 	}
 }
 
-static void fill_scanline(void) {
+void fill_scanline(void) {
 	// First determine which line from the buffer we need
 	const uint8_t vga_buf_y = line / 16;
 	const uint8_t vga_buf_glyph = line % 16;
@@ -100,45 +94,23 @@ static void fill_scanline(void) {
 	}
 }
 
-void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
-{
-    if(htim->Instance == TIM2 &&
-       htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
-    {
-		if (vFlag) {
-			vga_start_line_DMA();
-    		active_scanline ^= 1;
-    		fill_scanline();
-    	}
-    }
-
-    if(htim->Instance == TIM4 &&
-       htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3)
-    {
-    	vFlag = 0x01;
-    }
-}
-
-void vga_transmit_line_DMA(void)
-{
-	vga_prepare_line_DMA();
-	vga_start_line_DMA();
-}
-
 void vga_prepare_line_DMA(void)
 {
-
+    /* Configure DMA Stream source address */
+	DMA2_Stream2->M0AR = (uint32_t)&scanline[active_scanline];
+	const uint16_t size = SCANLINE_LEN + 1;
+	DMA2_Stream2->NDTR = size;
 }
 
 void vga_start_line_DMA(void)
 {
-	const uint16_t size = SCANLINE_LEN + 1;
+//	const uint16_t size = SCANLINE_LEN + 1;
 
 	  /* Clear DBM bit */
-	DMA2_Stream2->CR &= (uint32_t)(~DMA_SxCR_DBM);
+//	DMA2_Stream2->CR &= (uint32_t)(~DMA_SxCR_DBM);
 
 	  /* Configure DMA Stream data length */
-	DMA2_Stream2->NDTR = size;
+//	DMA2_Stream2->NDTR = size;
 
 //    DMA_Base_Registers *regs = (DMA_Base_Registers *)hdma_spi1_tx.StreamBaseAddress;
     /* Clear all interrupt flags at correct offset within the register */
@@ -158,8 +130,9 @@ void vga_start_line_DMA(void)
 inline void vga_end_line_callback(void) {
 
 	/* Disable Tx DMA Request */
-	CLEAR_BIT(SPI1->CR2, SPI_CR2_TXDMAEN);
+//	CLEAR_BIT(SPI1->CR2, SPI_CR2_TXDMAEN);
 
+	vga_prepare_line_DMA();
 	line++;
 	if (line > 480) {
 	  line = vFlag = 0;
@@ -174,5 +147,4 @@ inline void vga_end_line_callback(void) {
 		  cursor_timer = 0;
 	  }
 	}
-	vga_prepare_line_DMA();
 }
