@@ -27,7 +27,7 @@ const uint8_t null_byte = 0x00;
 volatile uint16_t line = 0;
 volatile uint8_t vFlag = 0x00;
 volatile uint8_t active_scanline = 0x00;
-__attribute__((aligned(4))) uint8_t scanline[2][SCANLINE_LEN+1];
+uint8_t scanline[2][SCANLINE_LEN+1];
 
 void vga_dma_complete_callback(DMA_HandleTypeDef *hdma);
 void vga_prepare_line_DMA(void);
@@ -88,7 +88,13 @@ inline static void fill_scanline(void) {
 	uint8_t* dst = scanline[active_scanline];
 	for (int x=0; x<SCANLINE_LEN; x++) {
 		const uint8_t current_char = vga_buf_row[x];
-		dst[x] = fonts[(current_char - 32) & 0x7F][vga_buf_glyph];
+		if (current_char < 32 || current_char > 126) {
+		   dst[x] = 0x00;
+		}
+	   else {
+		   const uint8_t* glyph_ptr = fonts[current_char-32];
+		   dst[x] = glyph_ptr[vga_buf_glyph];
+	   }
 	}
 }
 
