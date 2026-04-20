@@ -29,7 +29,6 @@ volatile uint8_t vFlag = 0x00;
 volatile uint8_t active_scanline = 0x00;
 uint8_t scanline[2][SCANLINE_LEN+1];
 
-void vga_dma_complete_callback(DMA_HandleTypeDef *hdma);
 void vga_prepare_line_DMA(void);
 static void fill_scanline(void);
 
@@ -42,6 +41,9 @@ void vga_init(void) {
 	fill_scanline();
 
 	SET_BIT(SPI1->CR1, SPI_CR1_SPE);
+
+	/* disable transfer error interrupt */
+	DMA2_Stream2->CR &= ~DMA_SxCR_TEIE;
 
     /* Configure DMA Stream destination address */
 	DMA2_Stream2->PAR = (uint32_t)&SPI1->DR;
@@ -98,32 +100,6 @@ inline static void fill_scanline(void) {
 	}
 }
 
-inline void vga_end_line_callback(void) {
-
-	/* Disable Tx DMA Request */
-//	CLEAR_BIT(SPI1->CR2, SPI_CR2_TXDMAEN);
-
-    /* Configure DMA Stream source address */
-	DMA2_Stream2->M0AR = (uint32_t)&scanline[active_scanline];
-	const uint16_t size = SCANLINE_LEN + 1;
-	DMA2_Stream2->NDTR = size;
-
-	line++;
-	if (line > 480) {
-	  line = vFlag = 0;
-	  cursor_timer++;
-	  if (cursor_timer > 30) {
-		  if (vga_buffer[vga_cursor] == ' ') {
-			  vga_buffer[vga_cursor] = '_';
-		  }
-		  else {
-			  vga_buffer[vga_cursor] = ' ';
-		  }
-		  cursor_timer = 0;
-	  }
-	}
-}
-
 void TIM2_IRQHandler(void)
 {
 	if (TIM2->SR & TIM_SR_CC2IF)
@@ -146,5 +122,42 @@ void TIM4_IRQHandler(void)
 	if (TIM4->SR & TIM_SR_CC3IF) {
 		TIM4->SR &= ~TIM_SR_CC3IF;
 		vFlag = 0x01;
+	}
+}
+
+void DMA2_Stream2_IRQHandler(void)
+{
+	uint32_t isr = DMA2->LISR;
+	if ((isr & DMA_LISR_TCIF2) || (isr & DMA_LISR_TEIF2)) {
+		/* clear transfer error and transfer complete flags */
+		DMA2->LIFCR = DMA_LIFCR_CTEIF2 | DMA_LIFCR_CTCIF2;
+
+	//	DMA2_Stream2->CR  &= ~(DMA_IT_TC);
+
+	//	CLEAR_BIT(SPI1->CR2, SPI_CR2_ERRIE);
+		CLEAR_BIT(SPI1->CR2, SPI_CR2_TXDMAEN);
+
+		DMA2_Stream2->CR &= ~DMA_SxCR_EN;
+		while (DMA2_Stream2->CR & DMA_SxCR_EN);
+
+		/* Configure DMA Stream source address */
+		DMA2_Stream2->M0AR = (uint32_t)&scanline[active_scanline];
+		const uint16_t size = SCANLINE_LEN + 1;
+		DMA2_Stream2->NDTR = size;
+
+		line++;
+		if (line > 480) {
+			line = vFlag = 0;
+			cursor_timer++;
+			if (cursor_timer > 30) {
+				if (vga_buffer[vga_cursor] == ' ') {
+					vga_buffer[vga_cursor] = '_';
+				}
+				else {
+					vga_buffer[vga_cursor] = ' ';
+				}
+			  cursor_timer = 0;
+			}
+		}
 	}
 }
