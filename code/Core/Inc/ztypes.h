@@ -45,12 +45,11 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "FreeRTOS.h"
-#include "task.h"
+#include "main.h"
 //#include <avr/pgmspace.h>
 //#include <Arduino.h>
 
-#define millis()	(xTaskGetTickCount() * portTICK_PERIOD_MS)
+#define millis()	HAL_GetTick()
 
 /* Configuration options */
 

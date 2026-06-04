@@ -10,6 +10,7 @@
 #include "main.h"
 #include "vga.h"
 #include "vga_font.h"
+#include "frame.h"
 
 #define VISIBLE_START	35
 #define VISIBLE_END		514
@@ -104,16 +105,13 @@ void TIM2_IRQHandler(void)
 {
 	if (TIM2->SR & TIM_SR_CC2IF)
 	{
-	    TIM2->SR &= ~TIM_SR_CC2IF;
 		if (vFlag) {
 		    /* Enable Common interrupts*/
 			DMA2_Stream2->CR  |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME | DMA_SxCR_EN;
 		    /* Enable SPI DMA request */
 		    SET_BIT(SPI1->CR2, SPI_CR2_TXDMAEN);
-
-    		active_scanline ^= 1;
-    		fill_scanline();
     	}
+		TIM2->SR &= ~TIM_SR_CC2IF;
 	}
 }
 
@@ -140,24 +138,14 @@ void DMA2_Stream2_IRQHandler(void)
 		DMA2_Stream2->CR &= ~DMA_SxCR_EN;
 		while (DMA2_Stream2->CR & DMA_SxCR_EN);
 
-		/* Configure DMA Stream source address */
-		DMA2_Stream2->M0AR = (uint32_t)&scanline[active_scanline];
-		const uint16_t size = SCANLINE_LEN + 1;
-		DMA2_Stream2->NDTR = size;
-
 		line++;
 		if (line > 480) {
 			line = vFlag = 0;
-			cursor_timer++;
-			if (cursor_timer > 30) {
-				if (vga_buffer[vga_cursor] == ' ') {
-					vga_buffer[vga_cursor] = '_';
-				}
-				else {
-					vga_buffer[vga_cursor] = ' ';
-				}
-			  cursor_timer = 0;
-			}
 		}
+
+		/* Configure DMA Stream source address */
+		DMA2_Stream2->M0AR = (uint32_t)&vga_frame[line];
+		const uint16_t size = SCANLINE_LEN + 1;
+		DMA2_Stream2->NDTR = size;
 	}
 }

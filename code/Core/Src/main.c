@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
 #include "fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -59,7 +58,6 @@ TIM_HandleTypeDef htim4;
 
 UART_HandleTypeDef huart2;
 
-osThreadId defaultTaskHandle;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -73,8 +71,6 @@ static void MX_USART2_UART_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_SPI1_Init(void);
-void StartDefaultTask(void const * argument);
-
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -128,44 +124,26 @@ int main(void)
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);   // VSYNC
   HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_2);
   HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_3);
+
+  FRESULT res = f_mount(&SDFatFS, "0:", 0);
+  if (res != FR_OK) {printf("f_mount error code: %i\r\n", res);}
+  else {printf("f_mount OK\r\n");}
+  /* Infinite loop */
+  printf("Start\r\n");
+
+  open_story();
+  configure(V1, V8);
+  initialize_screen();
+  z_restart();
+  vga_init();
   /* USER CODE END 2 */
-
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
-
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
-
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
-
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
-
-  /* Create the thread(s) */
-  /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 1024);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
-
-  /* Start scheduler */
-  osKernelStart();
-
-  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-
+	interpret();
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -544,39 +522,6 @@ int _write(int file, char *data, int len)
 
 
 /* USER CODE END 4 */
-
-/* USER CODE BEGIN Header_StartDefaultTask */
-/**
-  * @brief  Function implementing the defaultTask thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const * argument)
-{
-  /* USER CODE BEGIN 5 */
-	FRESULT res = f_mount(&SDFatFS, "0:", 0);
-	if (res != FR_OK) {printf("f_mount error code: %i\r\n", res);}
-	else {printf("f_mount OK\r\n");}
-	/* Infinite loop */
-	printf("Start\r\n");
-
-	open_story();
-	configure(V1, V8);
-	initialize_screen();
-	z_restart();
-	vga_init();
-
-	for(;;)
-	{
-		interpret();
-		osDelay(1);
-//		printf("Test\r\n");
-
-
-	}
-  /* USER CODE END 5 */
-}
 
 /**
   * @brief  Period elapsed callback in non blocking mode
