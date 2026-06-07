@@ -58,6 +58,7 @@ void vga_init(void) {
 
 void vga_handle(void) {
 	if (update_buffer) {
+		fill_scanline();
 		update_buffer = 0x00;
 	}
 }
@@ -118,6 +119,9 @@ void TIM2_IRQHandler(void)
 			DMA2_Stream2->CR  |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME | DMA_SxCR_EN;
 		    /* Enable SPI DMA request */
 		    SET_BIT(SPI1->CR2, SPI_CR2_TXDMAEN);
+
+		    active_scanline ^= 1;
+		    update_buffer = 0x01;
     	}
 		TIM2->SR &= ~TIM_SR_CC2IF;
 	}
@@ -152,7 +156,8 @@ void DMA2_Stream2_IRQHandler(void)
 		}
 
 		/* Configure DMA Stream source address */
-		DMA2_Stream2->M0AR = (uint32_t)&vga_frame[line];
+		//DMA2_Stream2->M0AR = (uint32_t)&vga_frame[line];
+		DMA2_Stream2->M0AR = (uint32_t)&scanline[active_scanline];
 		const uint16_t size = SCANLINE_LEN + 1;
 		DMA2_Stream2->NDTR = size;
 	}
