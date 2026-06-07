@@ -20,6 +20,8 @@
 #define VGA_COLS	80
 #define VGA_ROWS	30
 
+uint8_t update_buffer = 0x00;
+
 char vga_buffer[VGA_COLS * VGA_ROWS];
 volatile uint16_t vga_cursor = 0;
 volatile uint8_t cursor_timer = 0;
@@ -52,6 +54,12 @@ void vga_init(void) {
 	DMA2_Stream2->M0AR = (uint32_t)&scanline[active_scanline];
 	const uint16_t size = SCANLINE_LEN + 1;
 	DMA2_Stream2->NDTR = size;
+}
+
+void vga_handle(void) {
+	if (update_buffer) {
+		update_buffer = 0x00;
+	}
 }
 
 void vga_putc(const char c) {

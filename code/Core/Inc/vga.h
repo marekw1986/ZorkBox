@@ -9,6 +9,7 @@
 #define INC_VGA_H_
 
 void vga_init(void);
+void vga_handle(void);
 void vga_putc(const char c);
 
 #endif /* INC_VGA_H_ */
