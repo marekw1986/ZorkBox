@@ -10,7 +10,6 @@
 #include "main.h"
 #include "vga.h"
 #include "vga_font.h"
-#include "frame.h"
 
 #define VISIBLE_START	35
 #define VISIBLE_END		514
@@ -156,7 +155,6 @@ void DMA2_Stream2_IRQHandler(void)
 		}
 
 		/* Configure DMA Stream source address */
-		//DMA2_Stream2->M0AR = (uint32_t)&vga_frame[line];
 		DMA2_Stream2->M0AR = (uint32_t)&scanline[active_scanline];
 		const uint16_t size = SCANLINE_LEN + 1;
 		DMA2_Stream2->NDTR = size;
