@@ -28,6 +28,7 @@
 #include <sys/unistd.h> // STDOUT_FILENO, STDERR_FILENO
 #include "ztypes.h"
 #include "vga.h"
+#include "ps2.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -88,7 +89,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  uint8_t ch;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -142,7 +143,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	interpret();
+	//interpret();
+    if (ps2_kbd_getkey(&ch) == 1) {
+    	printf("Key pressed: %c\r\n", ch);
+    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
