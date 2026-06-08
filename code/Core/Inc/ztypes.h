@@ -50,6 +50,7 @@
 //#include <Arduino.h>
 
 #define millis()	HAL_GetTick()
+extern UART_HandleTypeDef huart2;
 
 /* Configuration options */
 
@@ -283,6 +284,10 @@ typedef short ZINT16;           /*   signed 2 byte quantity */
 
 /* Data access */
 
+typedef enum {VM_HALTED = 0, VM_RUNNING, VM_WAIT_INPUT} vm_state_t;
+
+extern vm_state_t state;
+
 
 /* External data */
 
@@ -357,7 +362,7 @@ void open_story( void );
 /* input.c */
 
 int get_line( zword_t, zword_t, zword_t );
-void z_read_char( int, zword_t * );
+int z_read_char( int, zword_t * );
 void z_sread_aread( int, zword_t * );
 void z_tokenise( int, zword_t * );
 int input_character( int );
@@ -366,7 +371,9 @@ int input_line( int, unsigned long, int, int * );
 
 /* interpre.c */
 
-int interpret( void );
+//int interpret( void );
+int vm_step(void);
+void zork_handle(void);
 
 
 /* math.c */
@@ -484,5 +491,10 @@ void z_dec_chk( zword_t, zword_t );
 void z_load( zword_t );
 void z_pull( zword_t );
 void z_push( zword_t );
+
+static inline int uart_key_available(void)
+{
+    return __HAL_UART_GET_FLAG(&huart2, UART_FLAG_RXNE) != RESET;
+};
 
 #endif /* !defined(__ZTYPES_INCLUDED) */

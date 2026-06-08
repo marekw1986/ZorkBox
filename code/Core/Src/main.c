@@ -144,7 +144,10 @@ int main(void)
   while (1)
   {
 	//interpret();
+	//zork_handle();
+	vga_handle();
     if (ps2_kbd_getkey(&ch) == 1) {
+    	vga_putc(ch);
     	printf("Key pressed: %c\r\n", ch);
     }
     /* USER CODE END WHILE */
@@ -312,7 +315,7 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_TIMING;
-  sConfigOC.Pulse = 450;
+  sConfigOC.Pulse = 576;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   if (HAL_TIM_OC_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {

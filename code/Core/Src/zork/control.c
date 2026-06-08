@@ -107,9 +107,10 @@ int z_call( int argc, zword_t * argv, int type )
 
     if ( type == ASYNC )
     {
-        status = interpret(  );
+        //status = interpret(  );
         interpreter_state = RUN;
-        interpreter_status = 1;
+        return 0;
+        //interpreter_status = 1;
     }
 
     return ( status );
@@ -206,6 +207,9 @@ void z_restart( void )
     pc = h_start_pc;
     sp = STACK_SIZE;
     fp = STACK_SIZE - 1;
+
+    interpreter_status = 1;
+    state = VM_RUNNING;
 
 }                               /* z_restart */
 

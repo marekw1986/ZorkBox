@@ -67,10 +67,12 @@ static zword_t find_word( int, unsigned long, long );
 *
 */
 
-void z_read_char( int argc, zword_t * argv )
+int z_read_char( int argc, zword_t * argv )
 {
     int c;
     zword_t arg_list[2];
+
+    if (!uart_key_available()) return VM_WAIT_INPUT;
 
     /* Supply default parameters */
 
@@ -113,6 +115,7 @@ void z_read_char( int argc, zword_t * argv )
     }
 
     store_operand( (zword_t)c );
+    return VM_RUNNING;
 
 }                               /* z_read_char */
 
@@ -564,7 +567,7 @@ int input_character( int timeout )
     uint32_t hal_timeout;
 
     if (timeout == 0) {
-        hal_timeout = HAL_MAX_DELAY;       // block forever
+        hal_timeout = 2;       // block forever
     }
     else {
         hal_timeout = timeout * 100;       // tenths of second → ms
