@@ -19,7 +19,7 @@
 #define VGA_COLS	80
 #define VGA_ROWS	30
 
-uint8_t update_buffer = 0x00;
+uint32_t update_buffer = 0x00;
 
 char vga_buffer[VGA_COLS * VGA_ROWS];
 volatile uint16_t vga_cursor = 0;
@@ -56,9 +56,21 @@ void vga_init(void) {
 }
 
 void vga_handle(void) {
+	static uint32_t cursor_timer;
+
 	if (update_buffer) {
 		fill_scanline();
 		update_buffer = 0x00;
+	}
+
+	if ((uint8_t)((HAL_GetTick()-cursor_timer)>=500)) {
+		if (vga_buffer[vga_cursor] == '_') {
+		  vga_buffer[vga_cursor] = ' ';
+		}
+		else {
+		  vga_buffer[vga_cursor] = '_';
+		}
+		cursor_timer = HAL_GetTick();
 	}
 }
 
@@ -144,10 +156,10 @@ void DMA2_Stream2_IRQHandler(void)
 	//	DMA2_Stream2->CR  &= ~(DMA_IT_TC);
 
 	//	CLEAR_BIT(SPI1->CR2, SPI_CR2_ERRIE);
-		CLEAR_BIT(SPI1->CR2, SPI_CR2_TXDMAEN);
+//		CLEAR_BIT(SPI1->CR2, SPI_CR2_TXDMAEN);
 
-		DMA2_Stream2->CR &= ~DMA_SxCR_EN;
-		while (DMA2_Stream2->CR & DMA_SxCR_EN);
+//		DMA2_Stream2->CR &= ~DMA_SxCR_EN;
+//		while (DMA2_Stream2->CR & DMA_SxCR_EN);
 
 		line++;
 		if (line > 480) {
