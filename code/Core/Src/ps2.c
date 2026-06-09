@@ -7,6 +7,7 @@
 #include "main.h"
 #include "ps2.h"
 #include "ps2_codepage.h"
+#include "vga.h"
 
 #if defined(STM32F0)
 #include "ps2_stm32f0xx.h"
@@ -835,10 +836,10 @@ uint8_t ps2_kbd_getkey(uint8_t * kbd_key)
       #if PS2_PIN_DEBUG == 2
       GPIOX_CLR(PS2_PIN_DEBUG_1);
       #endif
-      return 0;                         /* nincs a billentyü pufferben semmi */
+      return 0;                         /* nincs a billentyï¿½ pufferben semmi */
     }
     if(ps2_kbd_s == 0xE0)
-    { /* két bájtos karakter */
+    { /* kï¿½t bï¿½jtos karakter */
       state |= ST_KBDMODIFIER;
       if(ps2_kbd_dataread(&ps2_kbd_s) == 0)
       {
@@ -849,7 +850,7 @@ uint8_t ps2_kbd_getkey(uint8_t * kbd_key)
       }
     }
     if(ps2_kbd_s == 0xF0)
-    { /* gomb felengedés */
+    { /* gomb felengedï¿½s */
       state |= ST_KBDBREAK;
       if(ps2_kbd_dataread(&ps2_kbd_s) == 0)
       {
@@ -861,7 +862,7 @@ uint8_t ps2_kbd_getkey(uint8_t * kbd_key)
     }
 
     if(state & ST_KBDBREAK)
-    { /* gomb felengedés státusz */
+    { /* gomb felengedï¿½s stï¿½tusz */
       if(ps2_kbd_s == 0x12)
         state &= ~ST_KBDSHIFT_L;
       else if(ps2_kbd_s == 0x59)
@@ -870,12 +871,12 @@ uint8_t ps2_kbd_getkey(uint8_t * kbd_key)
         state &= ~ST_KBDCTRL;
       else if(ps2_kbd_s == 0x11 && (state & ST_KBDMODIFIER))
         state &= ~ST_KBDALTGR;
-      state &= ~(ST_KBDBREAK | ST_KBDMODIFIER); /* BREAK/MODIFIER státusz ki */
+      state &= ~(ST_KBDBREAK | ST_KBDMODIFIER); /* BREAK/MODIFIER stï¿½tusz ki */
     }
     else
-    {                                   /* gomb lenyomás vagy ismétlés */
+    {                                   /* gomb lenyomï¿½s vagy ismï¿½tlï¿½s */
       if(state & ST_KBDMODIFIER)
-      {                                 /* két bájtos (MODIFIER) gombok (INS, DEL, 4 nyil stb.) */
+      {                                 /* kï¿½t bï¿½jtos (MODIFIER) gombok (INS, DEL, 4 nyil stb.) */
         if(ps2_kbd_s == 0x11)
         {
           state |= ST_KBDALTGR;         /* E0 11 */
@@ -916,7 +917,7 @@ uint8_t ps2_kbd_getkey(uint8_t * kbd_key)
         return 1;
       }
       else
-      {                            /* nincs MODIFIER (egy bájtos kód) */
+      {                            /* nincs MODIFIER (egy bï¿½jtos kï¿½d) */
         if(ps2_kbd_s == 0x12)
         {
           state |= ST_KBDSHIFT_L;

@@ -85,6 +85,19 @@ static void MX_SPI1_Init(void);
   * @brief  The application entry point.
   * @retval int
   */
+
+void print_ascii_task(void) {
+    static uint32_t timer = 0;
+    static uint8_t current_char = 32;  // start at space
+
+    if ((millis() - timer) >= 50) {
+        vga_putc(current_char);
+        current_char++;
+        if (current_char > 126) current_char = 32;  // wrap back to space
+        timer = millis();
+    }
+}
+
 int main(void)
 {
 
@@ -145,10 +158,11 @@ int main(void)
   {
 	//interpret();
 	//zork_handle();
+	print_ascii_task();
 	vga_handle();
     if (ps2_kbd_getkey(&ch) == 1) {
     	vga_putc(ch);
-    	printf("Key pressed: %c\r\n", ch);
+    	//printf("Key pressed: %c\r\n", ch);
     }
     /* USER CODE END WHILE */
 

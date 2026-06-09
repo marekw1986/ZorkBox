@@ -60,7 +60,7 @@ extern "C" {
 /* keyboard EXTI, mouse EXTI, timer interrupt priority (0..15)
      note: 0 = the highest priority, 15 = the lowest priority
            (if freertos: see the FreeRTOSConfig.h) */
-#define PS2_IRQPRIORITY   7
+#define PS2_IRQPRIORITY   15
 
 /* the timer number used for the timers
      note: which one you choose depends on the processor family you are using,

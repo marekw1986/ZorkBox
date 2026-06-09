@@ -25,7 +25,8 @@ uint32_t update_buffer = 0x00;
 
 char vga_buffer[VGA_COLS * VGA_ROWS];
 volatile uint16_t vga_cursor = 0;
-volatile uint8_t cursor_timer = 0;
+//volatile uint32_t cursor_timer = 0;
+//volatile uint8_t cursor_visible = 1;
 
 const uint8_t null_byte = 0x00;
 volatile uint16_t line = 0;
@@ -63,23 +64,22 @@ void vga_init(void) {
 }
 
 void vga_handle(void) {
-    static uint32_t cursor_timer;
-
     if (update_buffer) {
-        // active_scanline is already the new TX buffer.
-        // Fill the idle one (^1) with the chunk that comes CHUNK_LINES after now.
-        uint8_t  fill_buf   = active_scanline ^ 1;
-        uint16_t next_start = line + CHUNK_LINES;
-        if (next_start >= 480) next_start = 0;  // or clamp, depending on your blanking
+        // Snapshot volatile line once — prevents ISR from changing it mid-calculation
+        uint16_t current_line = line;
+        uint8_t  fill_buf     = active_scanline ^ 1;
+        uint16_t next_start   = current_line + CHUNK_LINES;
+        if (next_start >= 480) next_start = 0;
 
         fill_scanline(fill_buf, next_start);
         update_buffer = 0x00;
     }
 
-    if ((uint8_t)((HAL_GetTick() - cursor_timer) >= 500)) {
-        vga_buffer[vga_cursor] = (vga_buffer[vga_cursor] == '_') ? ' ' : '_';
-        cursor_timer = HAL_GetTick();
-    }
+//    if (!vFlag && (uint8_t)((HAL_GetTick() - cursor_timer) >= 500)) {
+//    	cursor_visible = !cursor_visible;
+//    	vga_buffer[vga_cursor] = cursor_visible ? '_' : ' ';
+//        cursor_timer = HAL_GetTick();
+//    }
 }
 
 void vga_putc(const char c) {
@@ -97,7 +97,7 @@ void vga_putc(const char c) {
 
         default:
             if (c < 32 || c > 126) break;
-            while (vFlag) { vga_handle(); }
+//            while (vFlag) { vga_handle(); }
             vga_buffer[vga_cursor] = c;
             vga_cursor++;
             if (vga_cursor >= VGA_COLS * VGA_ROWS) {
@@ -107,6 +107,9 @@ void vga_putc(const char c) {
                 memset(vga_buffer + VGA_COLS * (VGA_ROWS - 1), ' ', VGA_COLS);
                 vga_cursor = VGA_COLS * (VGA_ROWS - 1);
             }
+            vga_buffer[vga_cursor] = '_';
+//            cursor_visible = 1;
+//            cursor_timer = HAL_GetTick();
         break;
     }
 }
