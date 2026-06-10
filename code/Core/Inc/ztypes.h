@@ -284,7 +284,22 @@ typedef short ZINT16;           /*   signed 2 byte quantity */
 
 /* Data access */
 
-typedef enum {VM_HALTED = 0, VM_RUNNING, VM_WAIT_INPUT} vm_state_t;
+typedef enum {
+    VM_RUNNING,
+    VM_WAIT_CHAR,    // z_read_char waiting for single keypress
+    VM_WAIT_LINE,    // z_sread_aread waiting for full line + Enter
+    VM_HALTED
+} vm_state_t;
+
+// Line input state — persists across vm_step() calls
+typedef struct {
+    zword_t char_buf_addr;   // Z-machine address of character buffer
+    zword_t token_buf_addr;  // Z-machine address of token buffer
+    int     buflen;          // max chars
+    int     read_size;       // chars read so far
+    int     argc;
+    zword_t argv[4];
+} vm_line_input_t;
 
 extern vm_state_t state;
 

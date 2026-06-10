@@ -72,8 +72,6 @@ int z_read_char( int argc, zword_t * argv )
     int c;
     zword_t arg_list[2];
 
-    if (!uart_key_available()) return VM_WAIT_INPUT;
-
     /* Supply default parameters */
 
     if ( argc < 3 )
@@ -561,61 +559,12 @@ void z_tokenise( int argc, zword_t * argv )
 
 }                               /* z_tokenise */
 
-int input_character( int timeout )
-{
-    uint8_t c;
-    uint32_t hal_timeout;
+int input_character(int timeout) {
+    (void)timeout;
+    return -1;  // never called — input handled cooperatively in zork_handle
+}                           /* input_character */
 
-    if (timeout == 0) {
-        hal_timeout = 2;       // block forever
-    }
-    else {
-        hal_timeout = timeout * 100;       // tenths of second → ms
-    }
-
-    if (HAL_UART_Receive(&huart2, &c, 1, hal_timeout) == HAL_OK)
-    {
-        return (c == '\n') ? '\r' : c;
-    }
-
-    return -1;
-}                               /* input_character */
-
-int input_line(int buflen, unsigned long addr, int timeout, int *read_size)
-{
-    uint8_t c = 0;
-    uint32_t hal_timeout;
-
-    if (timeout == 0) {
-        hal_timeout = HAL_MAX_DELAY;
-    }
-    else {
-        hal_timeout = timeout * 100;   // tenths of seconds → ms
-    }
-
-    *read_size = 0;
-
-    do
-    {
-        if (HAL_UART_Receive(&huart2, &c, 1, hal_timeout) == HAL_OK)
-        {
-            if (c == '\r')
-                c = '\n';
-
-            HAL_UART_Transmit(&huart2, &c, 1, HAL_MAX_DELAY); // optional echo
-
-            if ((c != '\n') && (*read_size < buflen))
-            {
-                (*read_size)++;
-                write_data_byte(&addr, tolower(c));
-            }
-        }
-        else
-        {
-            return -1;
-        }
-
-    } while (c != '\n');
-
-    return c;
-}                               /* input_line */
+int input_line(int buflen, unsigned long addr, int timeout, int *read_size) {
+    (void)buflen; (void)addr; (void)timeout; (void)read_size;
+    return -1;  // never called — input handled cooperatively in zork_handle
+}                              /* input_line */

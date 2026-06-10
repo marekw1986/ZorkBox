@@ -39,12 +39,17 @@
   *
   */
 
+#include <ctype.h>
 #include "ztypes.h"
 #include "main.h"
+#include "vga.h"
+#include "ps2.h"   // or whatever header declares ps2_kbd_getkey
 
 extern UART_HandleTypeDef huart2;
 
 vm_state_t state;
+
+static vm_line_input_t line_input;
 
 //#define DEBUG_TERPRE
 
@@ -699,8 +704,24 @@ int vm_step(void) {
                 z_put_prop( operand[0], operand[1], operand[2] );
                 break;
             case 0x24:
-                //pc -= 4;
-                z_sread_aread( count, operand );
+            {
+                // Save all context needed to resume after input
+                line_input.argc        = count;
+                line_input.argv[0]     = operand[0];
+                line_input.argv[1]     = operand[1];
+                line_input.argv[2]     = (count > 2) ? operand[2] : 0;
+                line_input.argv[3]     = (count > 3) ? operand[3] : 0;
+                line_input.char_buf_addr = operand[0];
+                line_input.token_buf_addr = operand[1];
+
+                // Read buflen and any pre-filled chars from Z-machine memory
+                unsigned long addr = operand[0];
+                line_input.buflen    = read_data_byte(&addr);
+                line_input.read_size = (h_type > V4) ? read_data_byte(&addr) : 0;
+
+                state = VM_WAIT_LINE;
+                return VM_WAIT_LINE;
+            }
                 break;
             case 0x25:
                 z_print_char( operand[0] );
@@ -752,11 +773,13 @@ int vm_step(void) {
                 //sound( count, operand );
                 break;
             case 0x36:
-                int result = z_read_char( count, operand );
-                if (result == VM_WAIT_INPUT) {
-                	state = VM_WAIT_INPUT;
-                	return result;
+            {
+                int result = z_read_char(count, operand);
+                if (result == VM_WAIT_CHAR) {
+                    state = VM_WAIT_CHAR;
+                    return VM_WAIT_CHAR;
                 }
+            }
                 break;
             case 0x37:
                 z_scan_table( count, operand );
@@ -931,17 +954,75 @@ void vm_tick(void) {
 }
 
 void zork_handle(void) {
-	switch(state) {
-		case VM_RUNNING:
-			vm_tick();
-			break;
-		case VM_WAIT_INPUT:
-			if (uart_key_available()) {
-				state = VM_RUNNING;
-			}
-			break;
+    switch (state) {
+        case VM_RUNNING:
+            vm_tick();
+            break;
 
-		default:
-			break;
-	}
+        case VM_WAIT_CHAR:
+        {
+            uint8_t c;
+            if (ps2_kbd_getkey(&c) == 1) {
+                // Feed character back into Z-machine and resume
+                store_operand((zword_t)c);
+                state = VM_RUNNING;
+            }
+            break;
+        }
+
+        case VM_WAIT_LINE:
+        {
+            uint8_t c;
+            if (ps2_kbd_getkey(&c) == 1) {
+                if (c == '\r' || c == '\n') {
+                    // Line complete — finalise buffer in Z-machine memory
+                    if (h_type > V4) {
+                        set_byte(line_input.char_buf_addr + 1, line_input.read_size);
+                    } else {
+                        set_byte(line_input.char_buf_addr + line_input.read_size + 1, 0);
+                    }
+
+                    // Tokenise if token buffer present
+                    if (line_input.token_buf_addr) {
+                        z_tokenise(2, (zword_t[]){
+                            line_input.char_buf_addr,
+                            line_input.token_buf_addr
+                        });
+                    }
+
+                    // Return terminator for V5+
+                    if (h_type > V4)
+                        store_operand((zword_t)'\r');
+
+                    vga_putc('\n');
+                    state = VM_RUNNING;
+
+                } else if (c == '\b' || c == 127) {
+                    // Backspace
+                    if (line_input.read_size > 0) {
+                        line_input.read_size--;
+                        // Erase from Z-machine buffer
+                        unsigned long addr = line_input.char_buf_addr +
+                                           (h_type > V4 ? 2 : 1) +
+                                           line_input.read_size;
+                        set_byte(addr, ' ');
+                        // Visual erase
+                        vga_putc('\b');  // you'll need to implement \b in vga_putc
+                    }
+                } else if (c >= 32 && c <= 126 && line_input.read_size < line_input.buflen) {
+                    // Normal character — write into Z-machine memory directly
+                    unsigned long addr = line_input.char_buf_addr +
+                                       (h_type > V4 ? 2 : 1) +
+                                       line_input.read_size;
+                    set_byte(addr, tolower(c));
+                    line_input.read_size++;
+                    vga_putc(c);  // echo to screen
+                }
+            }
+            break;
+        }
+
+        case VM_HALTED:
+            break;
+    }
 }

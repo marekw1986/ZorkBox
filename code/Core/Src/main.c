@@ -157,13 +157,13 @@ int main(void)
   while (1)
   {
 	//interpret();
-	//zork_handle();
-	print_ascii_task();
+	zork_handle();
+//	print_ascii_task();
 	vga_handle();
-    if (ps2_kbd_getkey(&ch) == 1) {
-    	vga_putc(ch);
-    	//printf("Key pressed: %c\r\n", ch);
-    }
+//    if (ps2_kbd_getkey(&ch) == 1) {
+//    	vga_putc(ch);
+//    	//printf("Key pressed: %c\r\n", ch);
+//    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
