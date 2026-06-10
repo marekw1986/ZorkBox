@@ -83,6 +83,9 @@ void vga_handle(void) {
 }
 
 void vga_putc(const char c) {
+    // Always clear cursor at current position before doing anything
+    if (vga_buffer[vga_cursor] == '_')
+        vga_buffer[vga_cursor] = ' ';
     switch (c) {
         case '\r':
         {
