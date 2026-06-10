@@ -19,7 +19,7 @@
 #define VGA_COLS        80
 #define VGA_ROWS        30
 
-#define CHUNK_LINES     128  // scanlines per buffer chunk
+#define CHUNK_LINES     96  // scanlines per buffer chunk
 
 uint32_t update_buffer = 0x00;
 
@@ -93,6 +93,15 @@ void vga_putc(const char c) {
 
         case '\n':
             vga_cursor = ((vga_cursor / VGA_COLS) + 1) * VGA_COLS;
+        break;
+
+        case '\b':
+            if (vga_cursor > 0) {
+                // If cursor is on '_', clear it first
+                vga_buffer[vga_cursor] = ' ';
+                vga_cursor--;
+                vga_buffer[vga_cursor] = ' ';
+            }
         break;
 
         default:
