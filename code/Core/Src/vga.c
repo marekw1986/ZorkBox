@@ -19,7 +19,7 @@
 #define VGA_COLS        80
 #define VGA_ROWS        30
 
-#define CHUNK_LINES     96  // scanlines per buffer chunk
+#define CHUNK_LINES     64  // scanlines per buffer chunk
 
 uint32_t update_buffer = 0x00;
 
@@ -32,6 +32,10 @@ const uint8_t null_byte = 0x00;
 volatile uint16_t line = 0;
 volatile uint8_t vFlag = 0x00;
 volatile uint8_t active_scanline = 0x00;
+
+static volatile uint8_t scroll_pending = 0;
+
+volatile uint8_t screen_blanking = 0x00;
 
 // Each buffer now holds CHUNK_LINES scanlines
 uint8_t scanline[2][CHUNK_LINES][SCANLINE_LEN + 1];
@@ -64,6 +68,13 @@ void vga_init(void) {
 }
 
 void vga_handle(void) {
+    // Only scroll during vertical blanking — DMA is idle, safe to memmove
+    if (scroll_pending && !vFlag) {
+        memmove(vga_buffer, vga_buffer + VGA_COLS, VGA_COLS * (VGA_ROWS - 1));
+        memset(vga_buffer + VGA_COLS * (VGA_ROWS - 1), ' ', VGA_COLS);
+        scroll_pending = 0;
+    }
+
     if (update_buffer) {
         // Snapshot volatile line once — prevents ISR from changing it mid-calculation
         uint16_t current_line = line;
@@ -96,6 +107,10 @@ void vga_putc(const char c) {
 
         case '\n':
             vga_cursor = ((vga_cursor / VGA_COLS) + 1) * VGA_COLS;
+            if (vga_cursor >= VGA_COLS * VGA_ROWS) {
+                scroll_pending = 1;
+                vga_cursor = VGA_COLS * (VGA_ROWS - 1);
+            }
         break;
 
         case '\b':
@@ -113,10 +128,7 @@ void vga_putc(const char c) {
             vga_buffer[vga_cursor] = c;
             vga_cursor++;
             if (vga_cursor >= VGA_COLS * VGA_ROWS) {
-                // scroll up
-                memmove(vga_buffer, vga_buffer + VGA_COLS, VGA_COLS * (VGA_ROWS - 1));
-                // clear last line
-                memset(vga_buffer + VGA_COLS * (VGA_ROWS - 1), ' ', VGA_COLS);
+                scroll_pending = 1;
                 vga_cursor = VGA_COLS * (VGA_ROWS - 1);
             }
             vga_buffer[vga_cursor] = '_';
@@ -153,7 +165,7 @@ void TIM2_IRQHandler(void)
 {
     if (TIM2->SR & TIM_SR_CC2IF)
     {
-        if (vFlag) {
+        if (vFlag && !screen_blanking) {
             /* Enable Common interrupts */
             DMA2_Stream2->CR |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME | DMA_SxCR_EN;
             /* Enable SPI DMA request */
