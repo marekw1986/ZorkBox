@@ -161,7 +161,7 @@ static void fill_scanline(uint8_t buf_idx, uint16_t start_line) {
     }
 }
 
-void TIM2_IRQHandler(void)
+__attribute__((section(".RamFunc"))) void TIM2_IRQHandler(void)
 {
     if (TIM2->SR & TIM_SR_CC2IF)
     {
@@ -175,7 +175,7 @@ void TIM2_IRQHandler(void)
     }
 }
 
-void TIM4_IRQHandler(void)
+__attribute__((section(".RamFunc"))) void TIM4_IRQHandler(void)
 {
     if (TIM4->SR & TIM_SR_CC3IF) {
         TIM4->SR &= ~TIM_SR_CC3IF;
@@ -183,7 +183,7 @@ void TIM4_IRQHandler(void)
     }
 }
 
-void DMA2_Stream2_IRQHandler(void)
+__attribute__((section(".RamFunc"))) void DMA2_Stream2_IRQHandler(void)
 {
     uint32_t isr = DMA2->LISR;
     if ((isr & DMA_LISR_TCIF2) || (isr & DMA_LISR_TEIF2)) {
