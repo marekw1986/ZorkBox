@@ -19,7 +19,7 @@
 #define VGA_COLS        80
 #define VGA_ROWS        30
 
-#define CHUNK_LINES     32  // scanlines per buffer chunk
+#define CHUNK_LINES     64  // scanlines per buffer chunk
 
 uint32_t update_buffer = 0x00;
 
@@ -40,6 +40,7 @@ uint8_t scanline[2][CHUNK_LINES][SCANLINE_LEN + 1];
 
 void vga_prepare_line_DMA(void);
 static void fill_scanline(uint8_t buf_idx, uint16_t start_line);
+static void vga_scroll_now(void);
 
 void vga_init(void) {
     HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);         // HSYNC (highest)
@@ -66,13 +67,6 @@ void vga_init(void) {
 }
 
 void vga_handle(void) {
-    // Only scroll during vertical blanking — DMA is idle, safe to memmove
-    if (scroll_pending && !vFlag) {
-        memmove(vga_buffer, vga_buffer + VGA_COLS, VGA_COLS * (VGA_ROWS - 1));
-        memset(vga_buffer + VGA_COLS * (VGA_ROWS - 1), ' ', VGA_COLS);
-        scroll_pending = 0;
-    }
-
     if (update_buffer) {
         // Snapshot volatile line once — prevents ISR from changing it mid-calculation
         uint16_t current_line = line;
@@ -96,20 +90,23 @@ void vga_putc(const char c) {
     if (vga_buffer[vga_cursor] == '_')
         vga_buffer[vga_cursor] = ' ';
     switch (c) {
-        case '\r':
-        {
-            uint16_t row = vga_cursor / VGA_COLS;
-            vga_cursor = row * VGA_COLS;
-        }
-        break;
+		case '\r':
+		{
+			vga_buffer[vga_cursor] = ' ';   // clear '_' before moving
+			uint16_t row = vga_cursor / VGA_COLS;
+			vga_cursor = row * VGA_COLS;
+		}
+		break;
 
-        case '\n':
-            vga_cursor = ((vga_cursor / VGA_COLS) + 1) * VGA_COLS;
-            if (vga_cursor >= VGA_COLS * VGA_ROWS) {
-                scroll_pending = 1;
-                vga_cursor = VGA_COLS * (VGA_ROWS - 1);
-            }
-        break;
+		case '\n':
+		    vga_buffer[vga_cursor] = ' ';
+		    vga_cursor = ((vga_cursor / VGA_COLS) + 1) * VGA_COLS;
+		    if (vga_cursor >= VGA_COLS * VGA_ROWS) {
+		        while (vFlag) {vga_handle();}          // wait for vblank to end (DMA idle)
+		        vga_scroll_now();
+		        vga_cursor = VGA_COLS * (VGA_ROWS - 1);
+		    }
+		break;
 
         case '\b':
             if (vga_cursor > 0) {
@@ -122,16 +119,14 @@ void vga_putc(const char c) {
 
         default:
             if (c < 32 || c > 126) break;
-//            while (vFlag) { vga_handle(); }
-            vga_buffer[vga_cursor] = c;
+            vga_buffer[vga_cursor] = c;    // write the character
             vga_cursor++;
             if (vga_cursor >= VGA_COLS * VGA_ROWS) {
-                scroll_pending = 1;
+                while (vFlag) {}
+                vga_scroll_now();
                 vga_cursor = VGA_COLS * (VGA_ROWS - 1);
             }
             vga_buffer[vga_cursor] = '_';
-//            cursor_visible = 1;
-//            cursor_timer = HAL_GetTick();
         break;
     }
 }
@@ -140,7 +135,11 @@ void vga_putc(const char c) {
 static void fill_scanline(uint8_t buf_idx, uint16_t start_line) {
     for (uint8_t i = 0; i < CHUNK_LINES; i++) {
         uint16_t current_line = start_line + i;
-        if (current_line >= 480) break;  // past visible area
+        if (current_line >= 480) {
+            // Zero out remainder so DMA doesn't send stale data
+            memset(scanline[buf_idx][i], 0x00, SCANLINE_LEN + 1);
+            continue;
+        }
 
         const uint8_t vga_buf_y      = current_line / 16;
         const uint8_t vga_buf_glyph  = current_line % 16;
@@ -207,4 +206,9 @@ __attribute__((section(".RamFunc"))) void DMA2_Stream2_IRQHandler(void)
         DMA2_Stream2->M0AR = (uint32_t)scanline[active_scanline][line_in_chunk];
         DMA2_Stream2->NDTR = SCANLINE_LEN + 1;
     }
+}
+
+static void vga_scroll_now(void) {
+    memmove(vga_buffer, vga_buffer + VGA_COLS, VGA_COLS * (VGA_ROWS - 1));
+    memset(vga_buffer + VGA_COLS * (VGA_ROWS - 1), ' ', VGA_COLS);
 }
