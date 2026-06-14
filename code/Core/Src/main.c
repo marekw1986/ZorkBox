@@ -48,8 +48,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 SD_HandleTypeDef hsd;
-DMA_HandleTypeDef hdma_sdio_rx;
-DMA_HandleTypeDef hdma_sdio_tx;
 
 SPI_HandleTypeDef hspi1;
 DMA_HandleTypeDef hdma_spi1_tx;
@@ -72,8 +70,6 @@ static void MX_USART2_UART_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_SPI1_Init(void);
-
-extern void verify(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -87,19 +83,6 @@ extern void verify(void);
   * @brief  The application entry point.
   * @retval int
   */
-
-void print_ascii_task(void) {
-    static uint32_t timer = 0;
-    static uint8_t current_char = 32;  // start at space
-
-    if ((millis() - timer) >= 50) {
-        vga_putc(current_char);
-        current_char++;
-        if (current_char > 126) current_char = 32;  // wrap back to space
-        timer = millis();
-    }
-}
-
 int main(void)
 {
 
@@ -331,7 +314,7 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_TIMING;
-  sConfigOC.Pulse = 576;
+  sConfigOC.Pulse = 450;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   if (HAL_TIM_OC_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
@@ -461,12 +444,6 @@ static void MX_DMA_Init(void)
   /* DMA2_Stream2_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream2_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream2_IRQn);
-  /* DMA2_Stream3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 6, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
-  /* DMA2_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 6, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
 
 }
 

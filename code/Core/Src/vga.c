@@ -19,7 +19,7 @@
 #define VGA_COLS        80
 #define VGA_ROWS        30
 
-#define CHUNK_LINES     64  // scanlines per buffer chunk
+#define CHUNK_LINES     32  // scanlines per buffer chunk
 
 uint32_t update_buffer = 0x00;
 
