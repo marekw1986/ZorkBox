@@ -948,7 +948,11 @@ int vm_step(void) {
 
 void vm_tick(void) {
 	for (uint8_t i=0; i<32; i++) {
-		if (vm_step() != VM_RUNNING)
+		int res = vm_step();
+		if (res == VM_HALTED) {
+			state = VM_HALTED;
+		}
+		if (res != VM_RUNNING)
 			break;
 	}
 }
@@ -1023,6 +1027,12 @@ void zork_handle(void) {
         }
 
         case VM_HALTED:
+        	vga_clrscr();
+			open_story();
+			configure(V1, V8);
+			initialize_screen();
+			z_restart();
+			halt = FALSE;
             break;
     }
 }

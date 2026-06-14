@@ -66,6 +66,11 @@ void vga_init(void) {
     DMA2_Stream2->NDTR = size;
 }
 
+void vga_clrscr(void) {
+	memset(vga_buffer, ' ', sizeof(vga_buffer));
+	vga_cursor = 0;
+}
+
 void vga_handle(void) {
     if (update_buffer) {
         // Snapshot volatile line once — prevents ISR from changing it mid-calculation
