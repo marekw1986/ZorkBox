@@ -25,8 +25,8 @@ uint32_t update_buffer = 0x00;
 
 char vga_buffer[VGA_COLS * VGA_ROWS];
 volatile uint16_t vga_cursor = 0;
-//volatile uint32_t cursor_timer = 0;
-//volatile uint8_t cursor_visible = 1;
+volatile uint32_t cursor_timer = 0;
+volatile uint8_t cursor_visible = 1;
 
 const uint8_t null_byte = 0x00;
 volatile uint16_t line = 0;
@@ -78,11 +78,11 @@ void vga_handle(void) {
         update_buffer = 0x00;
     }
 
-//    if (!vFlag && (uint8_t)((HAL_GetTick() - cursor_timer) >= 500)) {
-//    	cursor_visible = !cursor_visible;
-//    	vga_buffer[vga_cursor] = cursor_visible ? '_' : ' ';
-//        cursor_timer = HAL_GetTick();
-//    }
+    if (!vFlag && (uint8_t)((HAL_GetTick() - cursor_timer) >= 500)) {
+    	cursor_visible = !cursor_visible;
+    	vga_buffer[vga_cursor] = cursor_visible ? '_' : ' ';
+        cursor_timer = HAL_GetTick();
+    }
 }
 
 void vga_putc(const char c) {
