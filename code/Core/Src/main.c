@@ -72,6 +72,8 @@ static void MX_USART2_UART_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_SPI1_Init(void);
+
+extern void verify(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */

@@ -35,8 +35,6 @@ volatile uint8_t active_scanline = 0x00;
 
 static volatile uint8_t scroll_pending = 0;
 
-volatile uint8_t screen_blanking = 0x00;
-
 // Each buffer now holds CHUNK_LINES scanlines
 uint8_t scanline[2][CHUNK_LINES][SCANLINE_LEN + 1];
 
@@ -165,7 +163,7 @@ __attribute__((section(".RamFunc"))) void TIM2_IRQHandler(void)
 {
     if (TIM2->SR & TIM_SR_CC2IF)
     {
-        if (vFlag && !screen_blanking) {
+        if (vFlag) {
             /* Enable Common interrupts */
             DMA2_Stream2->CR |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME | DMA_SxCR_EN;
             /* Enable SPI DMA request */

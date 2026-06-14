@@ -41,8 +41,10 @@
   
 //#include <SdFat.h>
 //#include <SdFatUtil.h>
-#include "fatfs.h"
+//#include "fatfs.h"
 #include "ztypes.h"
+#include "zork1_dat.h"
+#include "string.h"
 
 #define MAX_DYNAMIC_MEMORY	64*1024
 
@@ -52,9 +54,8 @@ extern int GLOBALVER;
 
 uint16_t dynamic_size = 0;
 uint8_t dynamic_memory[MAX_DYNAMIC_MEMORY];
-FIL game;        /* Zcode file pointer */
 
-static uint16_t f_get_word(FIL *file, uint32_t addr);
+static uint16_t flash_get_word(uint32_t addr);
 
 /*
  * open_story
@@ -63,31 +64,50 @@ static uint16_t f_get_word(FIL *file, uint32_t addr);
  *
  */
 
+//void verify(void)
+//{
+//    FRESULT res;
+//    UINT br;
+//    const char game_name[]   = "GAME.DAT";
+//
+//    res = f_open(&game, game_name, FA_READ);
+//    if (res != FR_OK) {
+//    	printf("Can't open GAME.DAT for verification");
+//    }
+//
+//    uint8_t failed = 0x00;
+//    uint32_t flash_ptr = 0;
+//    f_lseek(&game, 0);  // start at beginning
+//    uint8_t dat;
+//    for (flash_ptr = 0; flash_ptr < zork1_dat_len; flash_ptr++) {
+//    	f_read(&game, &dat, 1, &br);
+//    	if (dat != zork1_dat[flash_ptr]) {
+//    		printf("Mismatch detected at flash_ptr %lu, flash: %d, sd: %d\n", flash_ptr, zork1_dat[flash_ptr], dat);
+//    		failed |= 0x01;
+////    		break;
+//    	}
+//    }
+//
+//    printf("Failed: %d\n", failed);
+//
+//    f_read(&game, dynamic_memory, dynamic_size, &br);
+//    f_close(&game);  // start at beginning
+//
+//    return;
+//}
+
 void open_story(void)
 {
-    FRESULT res;
-    UINT br;
-    const char game_name[]   = "GAME.DAT";
+    dynamic_size = flash_get_word(0x0E);
 
-    res = f_open(&game, game_name, FA_READ);
-    if (res != FR_OK)
-        goto FATAL;
-
-    dynamic_size  = f_get_word(&game, 0x0E);
     if (dynamic_size > sizeof(dynamic_memory)) {
-    	printf("Not enough memory for dynamic data\r\n");
-    	goto FATAL;
+        printf("Not enough memory for dynamic data\r\n");
+        fatal();
     }
 
-    f_lseek(&game, 0);  // start at beginning
-    f_read(&game, dynamic_memory, dynamic_size, &br);
-    f_lseek(&game, 0);  // start at beginning
-
-    return;
-
-FATAL:
-    fatal();
-}                               /* open_story */
+    /* Copy dynamic (read-write) segment into RAM */
+    memcpy(dynamic_memory, &zork1_dat[0], dynamic_size);
+}                             /* open_story */
 
 
 /*
@@ -99,7 +119,7 @@ FATAL:
 
 void close_story( void )
 {
-	f_close(&game);
+
 }                               /* close_story */
 
 /*
@@ -110,11 +130,9 @@ void close_story( void )
  *
  */
 
-unsigned int get_story_size( void )
+unsigned int get_story_size(void)
 {
-
-    return (unsigned int)f_size(&game);
-
+    return (unsigned int)zork1_dat_len;
 }                               /* get_story_size */
 
 
@@ -126,13 +144,10 @@ unsigned int get_story_size( void )
  *
  */
 
-void z_verify( void )
+void z_verify(void)
 {
-    /* Make a conditional jump based on whether the checksum is equal */
-
-    conditional_jump( TRUE );
-
-}                               /* z_verify */
+    conditional_jump(TRUE);
+}                              /* z_verify */
 
 
 /*
@@ -254,20 +269,10 @@ zword_t read_code_word( void )
 *
 */
 
-zbyte_t read_code_byte( void )
+zbyte_t read_code_byte(void)
 {
-    zbyte_t value;
-    UINT br;
-
-    /* Seek to start of page */
-    f_lseek(&game, pc);
-
-    /* Read one byte */
-    f_read(&game, &value, 1, &br);
-
-    /* Update the PC */
+    zbyte_t value = zork1_dat[pc];
     pc++;
-
     return value;
 }                               /* read_code_byte */
 
@@ -306,22 +311,15 @@ void write_data_word( unsigned long *addr, zword_t value)
 zbyte_t read_data_byte(unsigned long *addr)
 {
     zbyte_t value;
-    UINT br;
 
     if (*addr < dynamic_size)
-    {
         value = dynamic_memory[*addr];
-    }
     else
-    {
-        f_lseek(&game, *addr);
-        f_read(&game, &value, 1, &br);
-    }
+        value = zork1_dat[*addr];
 
     (*addr)++;
-
     return value;
-}                              /* read_data_byte */
+}                            /* read_data_byte */
 
 void write_data_byte(unsigned long *addr, zbyte_t value)
 {
@@ -338,13 +336,8 @@ zword_t get_word(unsigned long offset){ unsigned long addr = offset; return read
 void set_byte(unsigned long offset, zbyte_t value){ unsigned long addr = offset; write_data_byte(&addr, value);}
 void set_word(unsigned long offset, zword_t value){ unsigned long addr = offset; write_data_word(&addr, value);}
 
-static uint16_t f_get_word(FIL *file, uint32_t addr) {
-    uint8_t buf[2];
-    UINT br;
-
-    f_lseek(file, addr);
-    f_read(file, buf, 2, &br);
-
-    return ((uint16_t)buf[0] << 8) | buf[1];   // Z-machine uses big-endian
+static uint16_t flash_get_word(uint32_t addr)
+{
+    return ((uint16_t)zork1_dat[addr] << 8) | zork1_dat[addr + 1];
 }
 
