@@ -136,6 +136,13 @@ void vga_putc(const char c) {
     }
 }
 
+void vga_puts(const char* str) {
+	while(*str) {
+		vga_putc(*str);
+		str++;
+	}
+}
+
 // Fill all CHUNK_LINES scanlines into buf_idx, starting from start_line
 static void fill_scanline(uint8_t buf_idx, uint16_t start_line) {
     for (uint8_t i = 0; i < CHUNK_LINES; i++) {

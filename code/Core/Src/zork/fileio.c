@@ -45,6 +45,7 @@
 #include "ztypes.h"
 #include "zork1_dat.h"
 #include "string.h"
+#include "vga.h"
 
 #define MAX_DYNAMIC_MEMORY	64*1024
 
@@ -177,6 +178,8 @@ int z_save( int argc, zword_t table, zword_t bytes, zword_t name )
         store_operand( (zword_t)(( status == 0 ) ? 1 : 0) );
     }
 
+    vga_puts("\nSaving not supported in this build.\n");
+
     return ( status );
 }                               /* z_save */
 
@@ -205,6 +208,8 @@ int z_restore( int argc, zword_t table, zword_t bytes, zword_t name )
     {
         store_operand( (zword_t)(( status == 0 ) ? 2 : 0) );
     }
+
+    vga_puts("\nSaving not supported in this build.\n");
 
     return ( status );
 }                               /* z_restore */

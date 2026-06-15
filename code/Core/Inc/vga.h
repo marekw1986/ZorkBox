@@ -12,5 +12,6 @@ void vga_init(void);
 void vga_clrscr(void);
 void vga_handle(void);
 void vga_putc(const char c);
+void vga_puts(const char* str);
 
 #endif /* INC_VGA_H_ */
