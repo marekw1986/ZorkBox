@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <sys/unistd.h> // STDOUT_FILENO, STDERR_FILENO
 #include "ztypes.h"
+#include "eliza/eliza.h"
 #include "vga.h"
 #include "ps2.h"
 /* USER CODE END Includes */
@@ -121,11 +122,12 @@ int main(void)
   /* Infinite loop */
   printf("Start\r\n");
 
-  open_story();
-  configure(V1, V8);
-  initialize_screen();
-  z_restart();
+//  open_story();
+//  configure(V1, V8);
+//  initialize_screen();
+//  z_restart();
   vga_init();
+  eliza_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -133,8 +135,9 @@ int main(void)
   while (1)
   {
 	//interpret();
-	zork_handle();
+//	zork_handle();
 //	print_ascii_task();
+	eliza_handle();
 	vga_handle();
 //    if (ps2_kbd_getkey(&ch) == 1) {
 //    	vga_putc(ch);
