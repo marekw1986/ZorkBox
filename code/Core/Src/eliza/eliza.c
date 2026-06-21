@@ -219,8 +219,11 @@ typedef enum {
     ELIZA_GREETING,   /* print banner once, then wait for input   */
     ELIZA_INPUT,      /* accumulate keystrokes into inputstr[]     */
     ELIZA_RESPOND,    /* compute + print response, back to INPUT   */
-    ELIZA_DONE        /* "BYE" received                            */
+    ELIZA_DONE,        /* "BYE" received                            */
+	ELIZA_WAIT_RESET
 } ElizaState;
+
+uint32_t elizaTimer;
 
 static ElizaState  state;
 static char        inputstr[MAXLINELEN];
@@ -422,6 +425,16 @@ void eliza_handle(void)
 
     case ELIZA_DONE:
         /* Nothing more to do — sit here silently */
+    	elizaTimer = HAL_GetTick();
+    	state = ELIZA_WAIT_RESET;
         break;
+
+    case ELIZA_WAIT_RESET:
+    	if ((uint32_t)(HAL_GetTick()-elizaTimer) >= 2000) {
+    		vga_clrscr();
+    		state = ELIZA_GREETING;
+    		inputlen = 0;
+    	}
+    	break;
     }
 }
