@@ -61,8 +61,8 @@ all: main-build
 main-build: ZorkBox.elf secondary-outputs
 
 # Tool invocations
-ZorkBox.elf ZorkBox.map: $(OBJS) $(USER_OBJS) /home/marek/Dropbox/Projekty/ZorkBox/code/STM32F411RCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "ZorkBox.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/marek/Dropbox/Projekty/ZorkBox/code/STM32F411RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ZorkBox.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+ZorkBox.elf ZorkBox.map: $(OBJS) $(USER_OBJS) /home/marek/Projekty/ZorkBox/code/STM32F411RCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "ZorkBox.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/marek/Projekty/ZorkBox/code/STM32F411RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ZorkBox.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
